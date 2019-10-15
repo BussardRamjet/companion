@@ -54,6 +54,11 @@ int WinMain(
 	LPSTR     lpCmdLine,
 	int       nShowCmd)
 {
+	nShowCmd;
+	lpCmdLine;
+	hInstance;
+	hPrevInstance;
+
     // Create application window
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Mattel DnD Portable Companion"), NULL };
     ::RegisterClassEx(&wc);
@@ -105,8 +110,6 @@ int WinMain(
     //IM_ASSERT(font != NULL);
 
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
