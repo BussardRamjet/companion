@@ -10,6 +10,9 @@
     <Filter Include="imgui_integration">
       <UniqueIdentifier>{40573709-e17b-468b-9779-65dffa227559}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{b7642e72-9abe-42f3-946e-1f08c2918952}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\contrib\imgui\imconfig.h">
@@ -26,6 +29,9 @@
     </ClInclude>
     <ClInclude Include="imgui_integration\imgui_impl_win32.h">
       <Filter>imgui_integration</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\companion.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="imgui_integration\imgui_impl_win32.cpp">
       <Filter>imgui_integration</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\companion.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
