@@ -1,2 +1,52 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="contrib">
+      <UniqueIdentifier>{f9a6c88a-d073-4062-994a-43ca110b4220}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contrib\imgui">
+      <UniqueIdentifier>{d4c46bf7-8853-4612-846d-d2d4fc8c7d4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imgui_integration">
+      <UniqueIdentifier>{40573709-e17b-468b-9779-65dffa227559}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\contrib\imgui\imconfig.h">
+      <Filter>contrib\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\contrib\imgui\imgui.h">
+      <Filter>contrib\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\contrib\imgui\imgui_internal.h">
+      <Filter>contrib\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_integration\imgui_impl_dx12.h">
+      <Filter>imgui_integration</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_integration\imgui_impl_win32.h">
+      <Filter>imgui_integration</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\contrib\imgui\imgui.cpp">
+      <Filter>contrib\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\contrib\imgui\imgui_demo.cpp">
+      <Filter>contrib\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\contrib\imgui\imgui_draw.cpp">
+      <Filter>contrib\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\contrib\imgui\imgui_widgets.cpp">
+      <Filter>contrib\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="imgui_integration\imgui_impl_dx12.cpp">
+      <Filter>imgui_integration</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_integration\imgui_impl_win32.cpp">
+      <Filter>imgui_integration</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
