@@ -44,13 +44,24 @@ constexpr float room_screen_size = 32.f;
 class Dungeon
 {
 public:
-	void draw()
+	void draw() const
 	{
 		float dungeon_screen_size = (dungeon_size + 1) * room_screen_size;
 		auto screen_pos = ImGui::GetCursorScreenPos();
 		ImGui::Dummy({ dungeon_screen_size, dungeon_screen_size});
 		auto draw_list = ImGui::GetWindowDrawList();
 
+		draw_dungeon(screen_pos, draw_list);
+		draw_grid(screen_pos, draw_list);
+	}
+
+	RoomRows m_rows;
+private:
+
+	void draw_dungeon(
+		const ImVec2 screen_pos,
+		ImDrawList* draw_list) const
+	{
 		auto dungeon_pos = ImVec2{ screen_pos.x + room_screen_size, screen_pos.y + room_screen_size };
 
 		for (int y = 0; y < dungeon_size; y++)
@@ -69,27 +80,22 @@ public:
 
 				float room_start_x = dungeon_pos.x + x * room_screen_size;
 				draw_list->AddRectFilled(
-					{ room_start_x, row_start_y }, 
-					{ room_start_x + room_screen_size, row_start_y + room_screen_size }, 
+					{ room_start_x, row_start_y },
+					{ room_start_x + room_screen_size, row_start_y + room_screen_size },
 					color);
 
-				if (!room.m_visited && 
+				if (!room.m_visited &&
 					room.m_dragon.m_certainty == Certainty::Unknown)
 				{
 					draw_list->AddText(nullptr, room_screen_size * 0.75f, { room_start_x + room_screen_size * 0.3f, row_start_y + room_screen_size * 0.15f }, IM_COL32_WHITE, "?");
 				}
 			}
 		}
-
-		draw_grid(draw_list, screen_pos);
 	}
 
-	RoomRows m_rows;
-private:
-
 	void draw_grid(
-		ImDrawList* draw_list, 
-		ImVec2 screen_pos)
+		ImVec2 screen_pos,
+		ImDrawList* draw_list) const
 	{
 		for (int i = 0; i <= dungeon_size + 1; i++)
 		{
