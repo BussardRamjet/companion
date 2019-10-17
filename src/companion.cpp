@@ -141,123 +141,123 @@ struct ivec2
 
 constexpr int dungeon_size = 10;
 
-    using RoomRow = std::array<Room, dungeon_size>;
-    using RoomRows = std::array<RoomRow, dungeon_size>;
+using RoomRow = std::array<Room, dungeon_size>;
+using RoomRows = std::array<RoomRow, dungeon_size>;
 
-    class Dungeon
+class Dungeon
+{
+public:
+    void draw()
     {
-    public:
-        void draw()
+        float dungeon_screen_size = (dungeon_size + 1) * room_screen_size;
+        auto screen_pos = ImGui::GetCursorScreenPos();
+        ImGui::Dummy({ dungeon_screen_size, dungeon_screen_size });
+        auto draw_list = ImGui::GetWindowDrawList();
+
+        draw_grid(screen_pos, *draw_list);
+        draw_dungeon(screen_pos, *draw_list);
+    }
+
+    void draw_selected_room_details()
+    {
+        ImGui::Text("Position: %c:%d", m_selected_room.y + 65, m_selected_room.x);
+        auto& room = m_rows[m_selected_room.y][m_selected_room.x];
+        ImGui::Checkbox("Visited", &room.m_visited);
+        room.m_pit.draw("Pit");
+        room.m_dragon.draw("Dragon");
+        room.m_arrow.draw("Arrow");
+    }
+
+private:
+
+    RoomRows m_rows;
+    ivec2 m_selected_room{ 0,0 };
+
+    void draw_dungeon(
+        const ImVec2 screen_pos,
+        ImDrawList& draw_list)
+    {
+        auto dungeon_pos = ImVec2{ screen_pos.x + room_screen_size, screen_pos.y + room_screen_size };
+
+        for (int y = 0; y < dungeon_size; y++)
         {
-            float dungeon_screen_size = (dungeon_size + 1) * room_screen_size;
-            auto screen_pos = ImGui::GetCursorScreenPos();
-            ImGui::Dummy({ dungeon_screen_size, dungeon_screen_size });
-            auto draw_list = ImGui::GetWindowDrawList();
-
-            draw_grid(screen_pos, *draw_list);
-            draw_dungeon(screen_pos, *draw_list);
-        }
-
-        void draw_selected_room_details()
-        {
-            ImGui::Text("Position: %c:%d", m_selected_room.y + 65, m_selected_room.x);
-            auto& room = m_rows[m_selected_room.y][m_selected_room.x];
-            ImGui::Checkbox("Visited", &room.m_visited);
-            room.m_pit.draw("Pit");
-            room.m_dragon.draw("Dragon");
-            room.m_arrow.draw("Arrow");
-        }
-
-    private:
-
-        RoomRows m_rows;
-        ivec2 m_selected_room{ 0,0 };
-
-        void draw_dungeon(
-            const ImVec2 screen_pos,
-            ImDrawList& draw_list)
-        {
-            auto dungeon_pos = ImVec2{ screen_pos.x + room_screen_size, screen_pos.y + room_screen_size };
-
-            for (int y = 0; y < dungeon_size; y++)
+            float row_start_y = dungeon_pos.y + y * room_screen_size;
+            for (int x = 0; x < dungeon_size; x++)
             {
-                float row_start_y = dungeon_pos.y + y * room_screen_size;
-                for (int x = 0; x < dungeon_size; x++)
+                ImVec2 room_pos{ dungeon_pos.x + x * room_screen_size, row_start_y };
+                ImU32 background_alpha = 96 + (x & 1) * 16 + (y & 1) * 16;
+
+                auto& room = m_rows[y][x];
+                bool should_select = room.draw(background_alpha, room_pos, draw_list);
+
+                if (should_select)
                 {
-                    ImVec2 room_pos{ dungeon_pos.x + x * room_screen_size, row_start_y };
-                    ImU32 background_alpha = 96 + (x & 1) * 16 + (y & 1) * 16;
-
-                    auto& room = m_rows[y][x];
-                    bool should_select = room.draw(background_alpha, room_pos, draw_list);
-
-                    if (should_select)
-                    {
-                        m_selected_room = {x, y};
-                    }
+                    m_selected_room = {x, y};
                 }
             }
-
-            ImVec2 room_pos{ dungeon_pos.x + m_selected_room.x * room_screen_size, dungeon_pos.y + m_selected_room.y * room_screen_size };
-            ImVec2 room_pos_max{ room_pos.x + room_screen_size, room_pos.y + room_screen_size };
-
-            draw_list.AddLine({ room_pos.x, room_pos.y }, { room_pos.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
-            draw_list.AddLine({ room_pos.x, room_pos.y }, { room_pos_max.x, room_pos.y }, IM_COL32(32, 32, 255, 255), 3.f);
-            draw_list.AddLine({ room_pos.x, room_pos_max.y }, { room_pos_max.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
-            draw_list.AddLine({ room_pos_max.x, room_pos.y }, { room_pos_max.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
-
         }
 
-        void draw_grid(
-            ImVec2 screen_pos,
-            ImDrawList& draw_list) const
-        {
-            for (int i = 0; i <= dungeon_size + 1; i++)
-            {
-                float room_start_x = screen_pos.x + i * room_screen_size;
-                float room_start_y = screen_pos.y + i * room_screen_size;
+        ImVec2 room_pos{ dungeon_pos.x + m_selected_room.x * room_screen_size, dungeon_pos.y + m_selected_room.y * room_screen_size };
+        ImVec2 room_pos_max{ room_pos.x + room_screen_size, room_pos.y + room_screen_size };
 
-                if (i > 0 && i <= dungeon_size)
-                {
-                    char str[2] = { 0 };
-
-                    str[0] = '0' + char(i - 1);
-                    draw_list.AddText(nullptr, room_screen_size * 0.75f, { room_start_x + room_screen_size * 0.3f, screen_pos.y + room_screen_size * 0.15f }, IM_COL32_WHITE, str);
-
-                    str[0] = 'A' + char(i - 1);
-                    draw_list.AddText(nullptr, room_screen_size * 0.75f, { screen_pos.x + room_screen_size * 0.3f, room_start_y + room_screen_size * 0.15f }, IM_COL32_WHITE, str);
-                }
-
-                draw_list.AddLine(
-                    { room_start_x, screen_pos.y },
-                    { room_start_x, screen_pos.y + (dungeon_size + 1) * room_screen_size },
-                    IM_COL32_WHITE);
-
-                draw_list.AddLine(
-                    { screen_pos.x, room_start_y },
-                    { screen_pos.x + (dungeon_size + 1) * room_screen_size, room_start_y },
-                    IM_COL32_WHITE);
-            }
-        }
-    };
-
-    Dungeon s_dungeon;
-
-    void companion_draw()
-    {
-        ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Text("Welcome to Mattel DnD Portable Companion!");
-        ImGui::DragFloat("Room size", &room_screen_size);
-
-        s_dungeon.draw();
-
-        ImGui::Text("(c) 2019 Norbert Szabo");
-        ImGui::End();
-
-        ImGui::Begin("Room", 0, ImGuiWindowFlags_AlwaysAutoResize);
-
-        s_dungeon.draw_selected_room_details();
-
-        ImGui::End();
-
+        draw_list.AddLine({ room_pos.x, room_pos.y }, { room_pos.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
+        draw_list.AddLine({ room_pos.x, room_pos.y }, { room_pos_max.x, room_pos.y }, IM_COL32(32, 32, 255, 255), 3.f);
+        draw_list.AddLine({ room_pos.x, room_pos_max.y }, { room_pos_max.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
+        draw_list.AddLine({ room_pos_max.x, room_pos.y }, { room_pos_max.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
 
     }
+
+    void draw_grid(
+        ImVec2 screen_pos,
+        ImDrawList& draw_list) const
+    {
+        for (int i = 0; i <= dungeon_size + 1; i++)
+        {
+            float room_start_x = screen_pos.x + i * room_screen_size;
+            float room_start_y = screen_pos.y + i * room_screen_size;
+
+            if (i > 0 && i <= dungeon_size)
+            {
+                char str[2] = { 0 };
+
+                str[0] = '0' + char(i - 1);
+                draw_list.AddText(nullptr, room_screen_size * 0.75f, { room_start_x + room_screen_size * 0.3f, screen_pos.y + room_screen_size * 0.15f }, IM_COL32_WHITE, str);
+
+                str[0] = 'A' + char(i - 1);
+                draw_list.AddText(nullptr, room_screen_size * 0.75f, { screen_pos.x + room_screen_size * 0.3f, room_start_y + room_screen_size * 0.15f }, IM_COL32_WHITE, str);
+            }
+
+            draw_list.AddLine(
+                { room_start_x, screen_pos.y },
+                { room_start_x, screen_pos.y + (dungeon_size + 1) * room_screen_size },
+                IM_COL32_WHITE);
+
+            draw_list.AddLine(
+                { screen_pos.x, room_start_y },
+                { screen_pos.x + (dungeon_size + 1) * room_screen_size, room_start_y },
+                IM_COL32_WHITE);
+        }
+    }
+};
+
+Dungeon s_dungeon;
+
+void companion_draw()
+{
+    ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Text("Welcome to Mattel DnD Portable Companion!");
+    ImGui::DragFloat("Room size", &room_screen_size);
+
+    s_dungeon.draw();
+
+    ImGui::Text("(c) 2019 Norbert Szabo");
+    ImGui::End();
+
+    ImGui::Begin("Room", 0, ImGuiWindowFlags_AlwaysAutoResize);
+
+    s_dungeon.draw_selected_room_details();
+
+    ImGui::End();
+
+
+}
