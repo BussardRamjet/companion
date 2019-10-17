@@ -20,7 +20,7 @@ const std::string s_certainty_labels[]
     "Certain",
 };
 
-static_assert((int32)Certainty::_Count == sizeof(s_certainty_labels) / sizeof(s_certainty_labels[0]));
+static_assert((int32)Certainty::_Count == std::size(s_certainty_labels));
 
 const ImU32 s_certainty_colors[]
 {
@@ -29,7 +29,7 @@ const ImU32 s_certainty_colors[]
     IM_COL32(255, 0, 0, 255),
 };
 
-static_assert((int32)Certainty::_Count == sizeof(s_certainty_colors) / sizeof(s_certainty_colors[0]));
+static_assert((int32)Certainty::_Count == std::size(s_certainty_colors));
 
 class FuzzyBool
 {
