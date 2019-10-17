@@ -22,6 +22,15 @@ const std::string s_certainty_labels[]
 
 static_assert((int32)Certainty::_Count == sizeof(s_certainty_labels) / sizeof(s_certainty_labels[0]));
 
+const ImU32 s_certainty_colors[]
+{
+    IM_COL32(128, 128, 128, 255),
+    IM_COL32(255, 255, 0, 255),
+    IM_COL32(255, 0, 0, 255),
+};
+
+static_assert((int32)Certainty::_Count == sizeof(s_certainty_colors) / sizeof(s_certainty_colors[0]));
+
 class FuzzyBool
 {
 public:
@@ -49,7 +58,8 @@ public:
     bool m_value;
 };
 
-constexpr float room_screen_size = 32.f;
+float room_screen_size = 52.f;
+float room_font_size_mult = 0.28f;
 
 class Room
 {
@@ -80,10 +90,38 @@ public:
 
         draw_list.AddRectFilled(room_pos, room_pos_max, color);
 
-        if (!m_visited &&
-            m_dragon.m_certainty == Certainty::Unknown)
+        if (m_dragon.m_certainty == Certainty::Unknown &&
+            m_pit.m_certainty == Certainty::Unknown &&
+            m_arrow.m_certainty == Certainty::Unknown)
         {
             draw_list.AddText(nullptr, room_screen_size * 0.75f, { room_pos.x + room_screen_size * 0.3f, room_pos.y + room_screen_size * 0.15f }, IM_COL32_WHITE, "?");        
+        }
+        else
+        {
+            int lineCounter = m_pit.m_value + m_dragon.m_value + m_arrow.m_value;
+            if (lineCounter != 0)
+            {
+                float lineHeight = room_screen_size / lineCounter;
+                ImVec2 pos(room_pos);
+
+                if (m_pit.m_value)
+                {
+                    draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, s_certainty_colors[(int32)m_pit.m_certainty], "Pit");
+                    pos.y += lineHeight;
+                }
+
+                if (m_dragon.m_value)
+                {
+                    draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, s_certainty_colors[(int32)m_dragon.m_certainty], "DRAGON");
+                    pos.y += lineHeight;
+                }
+
+                if (m_arrow.m_value)
+                {
+                    draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, s_certainty_colors[(int32)m_arrow.m_certainty], "Arrow");
+                    pos.y += lineHeight;
+                }
+            }
         }
 
         return hovered && ImGui::IsMouseClicked(0);
@@ -208,6 +246,7 @@ constexpr int dungeon_size = 10;
     {
         ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Text("Welcome to Mattel DnD Portable Companion!");
+        ImGui::DragFloat("Room size", &room_screen_size);
 
         s_dungeon.draw();
 
