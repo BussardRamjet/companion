@@ -101,8 +101,20 @@ public:
             int lineCounter = m_pit.m_value + m_dragon.m_value + m_arrow.m_value;
             if (lineCounter != 0)
             {
-                float lineHeight = room_screen_size / lineCounter;
                 ImVec2 pos(room_pos);
+                float lineHeight = room_screen_size * room_font_size_mult;
+                if (lineCounter == 1)
+                {
+                    pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 2;
+                }
+                else if (lineCounter == 2)
+                {
+                    pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 3;
+                }
+                else if(lineCounter == 3)
+                {
+                    pos.y += room_screen_size * 0.1f;
+                }
 
                 if (m_pit.m_value)
                 {
@@ -246,8 +258,7 @@ void companion_draw()
 {
     ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Text("Welcome to Mattel DnD Portable Companion!");
-    ImGui::DragFloat("Room size", &room_screen_size);
-
+ 
     s_dungeon.draw();
 
     ImGui::Text("(c) 2019 Norbert Szabo");
