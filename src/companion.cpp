@@ -429,6 +429,9 @@ void companion_draw()
     ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Text("Welcome to Mattel DnD Portable Companion!");
     s_dungeon.draw();
+    ImGui::SameLine();
+    ImGui::Dummy({305.f, 0.f});
+    ImGui::SameLine();
     ImGui::Text("(c) 2019 Norbert Szabo");
     ImGui::End();
 
