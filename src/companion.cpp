@@ -54,6 +54,27 @@ public:
             ImGui::EndCombo();
         }
     }
+
+    void apply(
+        bool value)
+    {
+        if (m_certainty == Certainty::Certain)
+        {
+            return;
+        }
+
+        m_value = value;
+
+        if (!m_value)
+        {
+            m_certainty = Certainty::Certain;
+        }
+        else
+        {
+            m_certainty = Certainty::Uncertain;
+        }
+    }
+
     Certainty m_certainty;
     bool m_value;
 };
@@ -180,7 +201,46 @@ public:
         room.m_arrow.draw("Arrow");
     }
 
+    void move_selection(
+        const ivec2& offset)
+    {
+        m_selected_room.x = m_selected_room.x + offset.x;
+        m_selected_room.y = m_selected_room.y + offset.y;
+        if (m_selected_room.x >= dungeon_size) m_selected_room.x = 0;
+        if (m_selected_room.y >= dungeon_size) m_selected_room.y = 0;
+        if (m_selected_room.x < 0) m_selected_room.x = dungeon_size - 1;
+        if (m_selected_room.y < 0) m_selected_room.y = dungeon_size - 1;
+    }
+
+    void explore(
+        bool pit,
+        bool arrow,
+        bool dragon)
+    {
+        Room& room = m_rows[m_selected_room.y][m_selected_room.x];
+        room.m_visited = true;
+        room.m_arrow.apply(false);
+        room.m_dragon.apply(false);
+        room.m_pit.apply(false);
+
+        move_selection({ 1, 0 });
+        apply_speculative(pit, arrow, dragon);
+
+        move_selection({ -1, 1 });
+        apply_speculative(pit, arrow, dragon);
+
+        move_selection({ -1, -1 });
+        apply_speculative(pit, arrow, dragon);
+
+        move_selection({ 1, -1 });
+        apply_speculative(pit, arrow, dragon);
+
+        move_selection({ 0, 1 });
+    }
+
 private:
+
+
 
     RoomRows m_rows;
     ivec2 m_selected_room{ 0,0 };
@@ -250,24 +310,103 @@ private:
                 IM_COL32_WHITE);
         }
     }
+
+    void apply_speculative(
+        bool pit,
+        bool arrow,
+        bool dragon)
+    {
+        Room& room = m_rows[m_selected_room.y][m_selected_room.x];
+        if (!room.m_visited)
+        {
+            room.m_pit.apply(pit);
+            room.m_dragon.apply(dragon);
+            room.m_arrow.apply(arrow);
+        }
+    }
 };
 
 Dungeon s_dungeon;
+
+static bool s_dragon = false;
+static bool s_pit = false;
+static bool s_arrow = false;
+
+void actions_draw()
+{
+    ImGui::Dummy({ 29.f, 0.f });
+    ImGui::SameLine();
+    if (ImGui::Button(" ^ ") ||
+        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
+    {
+        s_dungeon.move_selection({0, -1});
+    }
+    
+    if (ImGui::Button(" < ") ||
+        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_LeftArrow)))
+    {
+        s_dungeon.move_selection({ -1, 0 });
+    }
+    ImGui::SameLine();
+    
+    if (ImGui::Button(" v ") ||
+        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
+    {
+        s_dungeon.move_selection({ 0, 1 });
+    }
+    ImGui::SameLine();
+    
+    if (ImGui::Button(" > ") ||
+        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
+    {
+        s_dungeon.move_selection({ 1, 0 });
+    }
+
+    ImGui::Dummy({ 4.f, 16.f });
+
+    ImGui::Checkbox("Pit", &s_pit);
+
+    if (ImGui::IsKeyPressed('P'))
+    {
+        s_pit = !s_pit;
+    }
+
+    ImGui::Checkbox("Arrow", &s_arrow);
+    if (ImGui::IsKeyPressed('A'))
+    {
+        s_arrow = !s_arrow;
+    }
+
+    ImGui::Checkbox("Dragon", &s_dragon);
+    if (ImGui::IsKeyPressed('D'))
+    {
+        s_dragon = !s_dragon;
+    }
+
+    ImGui::Dummy({ 4.f, 2.f });
+    ImGui::Dummy({ 9.f, 0.f });
+    ImGui::SameLine();
+    if (ImGui::Button("Explore!") ||
+        ImGui::IsKeyPressed(' '))
+    {
+        s_dungeon.explore(s_pit, s_arrow, s_dragon);
+    }
+}
 
 void companion_draw()
 {
     ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Text("Welcome to Mattel DnD Portable Companion!");
- 
     s_dungeon.draw();
-
     ImGui::Text("(c) 2019 Norbert Szabo");
     ImGui::End();
 
     ImGui::Begin("Room", 0, ImGuiWindowFlags_AlwaysAutoResize);
-
     s_dungeon.draw_selected_room_details();
+    ImGui::End();
 
+    ImGui::Begin("Actions", 0, ImGuiWindowFlags_AlwaysAutoResize);
+    actions_draw();
     ImGui::End();
 
 
