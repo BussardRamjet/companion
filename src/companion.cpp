@@ -75,6 +75,12 @@ public:
         }
     }
 
+    void reset()
+    {
+        m_value = false;
+        m_certainty = Certainty::Unknown;
+    }
+
     Certainty m_certainty;
     bool m_value;
 };
@@ -87,7 +93,15 @@ class Room
 public:
     Room()
     {
+        reset();
+    }
+
+    void reset()
+    {
         m_visited = false;
+        m_pit.reset();
+        m_dragon.reset();;
+        m_arrow.reset();;
     }
 
     bool draw(
@@ -189,6 +203,23 @@ public:
 
         draw_grid(screen_pos, *draw_list);
         draw_dungeon(screen_pos, *draw_list);
+
+        if (ImGui::Button("Reset dungeon"))
+        {
+            reset();
+        }
+    }
+
+    void reset()
+    {
+        m_selected_room = { 0,0 };
+        for (RoomRow& roomRow : m_rows)
+        {
+            for (Room& room : roomRow)
+            {
+                room.reset();
+            }
+        }
     }
 
     void draw_selected_room_details()
@@ -408,6 +439,4 @@ void companion_draw()
     ImGui::Begin("Actions", 0, ImGuiWindowFlags_AlwaysAutoResize);
     actions_draw();
     ImGui::End();
-
-
 }
