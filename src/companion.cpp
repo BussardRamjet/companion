@@ -5,88 +5,43 @@
 
 using int32 = int32_t;
 
-enum class Certainty
+struct ivec2
+{
+    int32 x;
+    int32 y;
+};
+
+enum class State
 {
     Unknown,
-    Uncertain,
-    Certain,
+    No,
+    Maybe,
     _Count,
 };
 
-const std::string s_certainty_labels[]
+const std::string s_state_labels[]
 {
     "Unknown",
-    "Uncertain",
-    "Certain",
+    "No",
+    "Maybe",
 };
 
-static_assert((int32)Certainty::_Count == std::size(s_certainty_labels));
+static_assert((int32)State::_Count == std::size(s_state_labels));
 
-const ImU32 s_certainty_colors[]
+enum class Attribute
 {
-    IM_COL32(128, 128, 128, 255),
-    IM_COL32(255, 255, 0, 255),
-    IM_COL32(255, 0, 0, 255),
-};
-
-static_assert((int32)Certainty::_Count == std::size(s_certainty_colors));
-
-class FuzzyBool
-{
-public:
-    FuzzyBool()
-    {
-        m_value = false;
-        m_certainty = Certainty::Unknown;
-    }
-
-    void draw(
-        const char* name)
-    {
-        ImGui::Checkbox(name, &m_value);
-        ImGui::SameLine();
-        if (ImGui::BeginCombo((std::string("##combo") + name).c_str(), s_certainty_labels[(int32)m_certainty].c_str())) // The second parameter is the label previewed before opening the combo.
-        {
-            for (int32 i = 0; i < (int32)Certainty::_Count; i++)
-            {
-                if (ImGui::Selectable(s_certainty_labels[i].c_str(), (int32)m_certainty == i)) m_certainty = (Certainty)i;
-            }
-            ImGui::EndCombo();
-        }
-    }
-
-    void apply(
-        bool value)
-    {
-        if (m_certainty == Certainty::Certain)
-        {
-            return;
-        }
-
-        m_value = value;
-
-        if (!m_value)
-        {
-            m_certainty = Certainty::Certain;
-        }
-        else
-        {
-            m_certainty = Certainty::Uncertain;
-        }
-    }
-
-    void reset()
-    {
-        m_value = false;
-        m_certainty = Certainty::Unknown;
-    }
-
-    Certainty m_certainty;
-    bool m_value;
+    Pit,
+    Arrow,
+    Dragon,
+    _Count,
 };
 
 float room_screen_size = 52.f;
 float room_font_size_mult = 0.28f;
+
+class Room;
+const Room& get_dungeon_room(
+    const ivec2& room_pos);
 
 class Room
 {
@@ -99,13 +54,36 @@ public:
     void reset()
     {
         m_visited = false;
-        m_pit.reset();
-        m_dragon.reset();;
-        m_arrow.reset();;
+        m_state[(int32)Attribute::Pit] = State::Unknown;
+        m_state[(int32)Attribute::Dragon] = State::Unknown;
+        m_state[(int32)Attribute::Arrow] = State::Unknown;
+    }
+
+    State get_state(
+        const ivec2& room_pos,
+        Attribute attrib)
+    {
+        const Room& left = get_dungeon_room(ivec2{ room_pos.x - 1, room_pos.y });
+        const Room& right = get_dungeon_room(ivec2{ room_pos.x + 1, room_pos.y });
+        const Room& up = get_dungeon_room(ivec2{ room_pos.x, room_pos.y - 1 });
+        const Room& down = get_dungeon_room(ivec2{ room_pos.x, room_pos.y + 1 });
+
+        if (left.m_state[(int32)attrib] == State::No) return State::No;
+        if (right.m_state[(int32)attrib] == State::No) return State::No;
+        if (up.m_state[(int32)attrib] == State::No) return State::No;
+        if (down.m_state[(int32)attrib] == State::No)  return State::No;
+
+        if (left.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
+        if (right.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
+        if (up.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
+        if (down.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
+
+        return State::Unknown;
     }
 
     bool draw(
         ImU32 background_alpha,
+        ivec2 room_coord,
         const ImVec2& room_pos,
         ImDrawList& draw_list)
     {
@@ -125,48 +103,55 @@ public:
 
         draw_list.AddRectFilled(room_pos, room_pos_max, color);
 
-        if (m_dragon.m_certainty == Certainty::Unknown &&
-            m_pit.m_certainty == Certainty::Unknown &&
-            m_arrow.m_certainty == Certainty::Unknown)
+        if (!m_visited)
         {
-            draw_list.AddText(nullptr, room_screen_size * 0.75f, { room_pos.x + room_screen_size * 0.3f, room_pos.y + room_screen_size * 0.15f }, IM_COL32_WHITE, "?");        
-        }
-        else
-        {
-            int lineCounter = m_pit.m_value + m_dragon.m_value + m_arrow.m_value;
-            if (lineCounter != 0)
+            State dragonState = get_state(room_coord, Attribute::Dragon);
+            State pitState = get_state(room_coord, Attribute::Pit);
+            State arrowState = get_state(room_coord, Attribute::Arrow);
+
+            if (dragonState == State::Unknown &&
+                pitState == State::Unknown &&
+                arrowState == State::Unknown)
             {
-                ImVec2 pos(room_pos);
-                float lineHeight = room_screen_size * room_font_size_mult;
-                if (lineCounter == 1)
+                draw_list.AddText(nullptr, room_screen_size * 0.75f, { room_pos.x + room_screen_size * 0.3f, room_pos.y + room_screen_size * 0.15f }, IM_COL32_WHITE, "?");        
+            }
+            else
+            {
+                int lineCounter = (int32)(dragonState == State::Maybe) + (int32)(pitState == State::Maybe) + (int32)(arrowState == State::Maybe);
+                if (lineCounter != 0)
                 {
-                    pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 2;
-                }
-                else if (lineCounter == 2)
-                {
-                    pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 3;
-                }
-                else if(lineCounter == 3)
-                {
-                    pos.y += room_screen_size * 0.1f;
-                }
+                    ImVec2 pos(room_pos);
+                    float lineHeight = room_screen_size * room_font_size_mult;
+                    if (lineCounter == 1)
+                    {
+                        pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 2;
+                    }
+                    else if (lineCounter == 2)
+                    {
+                        pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 3;
+                    }
+                    else if (lineCounter == 3)
+                    {
+                        pos.y += room_screen_size * 0.1f;
+                    }
 
-                if (m_pit.m_value)
-                {
-                    draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, s_certainty_colors[(int32)m_pit.m_certainty], "Pit");
-                    pos.y += lineHeight;
-                }
+                    if (pitState == State::Maybe)
+                    {
+                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, IM_COL32(255, 255, 0, 255), "Pit");
+                        pos.y += lineHeight;
+                    }
 
-                if (m_dragon.m_value)
-                {
-                    draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, s_certainty_colors[(int32)m_dragon.m_certainty], "DRAGON");
-                    pos.y += lineHeight;
-                }
+                    if (dragonState == State::Maybe)
+                    {
+                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, IM_COL32(255, 255, 0, 255), "DRAGON");
+                        pos.y += lineHeight;
+                    }
 
-                if (m_arrow.m_value)
-                {
-                    draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, s_certainty_colors[(int32)m_arrow.m_certainty], "Arrow");
-                    pos.y += lineHeight;
+                    if (arrowState == State::Maybe)
+                    {
+                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, IM_COL32(255, 255, 0, 255), "Arrow");
+                        pos.y += lineHeight;
+                    }
                 }
             }
         }
@@ -175,15 +160,7 @@ public:
     }
 
     bool m_visited;
-    FuzzyBool m_pit;
-    FuzzyBool m_dragon;
-    FuzzyBool m_arrow;
-};
-
-struct ivec2
-{
-    int32 x;
-    int32 y;
+    State m_state[(int32)Attribute::_Count];
 };
 
 constexpr int dungeon_size = 10;
@@ -227,9 +204,9 @@ public:
         ImGui::Text("Position: %c:%d", m_selected_room.y + 65, m_selected_room.x);
         auto& room = m_rows[m_selected_room.y][m_selected_room.x];
         ImGui::Checkbox("Visited", &room.m_visited);
-        room.m_pit.draw("Pit");
-        room.m_dragon.draw("Dragon");
-        room.m_arrow.draw("Arrow");
+        draw_state("Pit", &room.m_state[(int32)Attribute::Pit]);
+        draw_state("Dragon", &room.m_state[(int32)Attribute::Dragon]);
+        draw_state("Arrow", &room.m_state[(int32)Attribute::Arrow]);
     }
 
     void move_selection(
@@ -250,31 +227,56 @@ public:
     {
         Room& room = m_rows[m_selected_room.y][m_selected_room.x];
         room.m_visited = true;
-        room.m_arrow.apply(false);
-        room.m_dragon.apply(false);
-        room.m_pit.apply(false);
+        if (room.m_state[(int32)Attribute::Pit] != State::No)
+        {
+            room.m_state[(int32)Attribute::Pit] = pit ? State::Maybe : State::No;
+        }
 
-        move_selection({ 1, 0 });
-        apply_speculative(pit, arrow, dragon);
+        if (room.m_state[(int32)Attribute::Arrow] != State::No)
+        {
+            room.m_state[(int32)Attribute::Arrow] = arrow ? State::Maybe : State::No;
+        }
 
-        move_selection({ -1, 1 });
-        apply_speculative(pit, arrow, dragon);
+        if (room.m_state[(int32)Attribute::Dragon] != State::No)
+        {
+            room.m_state[(int32)Attribute::Dragon] = dragon ? State::Maybe : State::No;
+        }
+    }
 
-        move_selection({ -1, -1 });
-        apply_speculative(pit, arrow, dragon);
+    const Room& get_room(
+        const ivec2& roomCoord) const
+    {
+        int32 x = roomCoord.x;
+        while (x < 0) x += dungeon_size;
+        while (x >= dungeon_size) x -= dungeon_size;
 
-        move_selection({ 1, -1 });
-        apply_speculative(pit, arrow, dragon);
-
-        move_selection({ 0, 1 });
+        int32 y = roomCoord.y;
+        while (y < 0) y += dungeon_size;
+        while (y >= dungeon_size) y -= dungeon_size;
+        return m_rows[y][x];
     }
 
 private:
 
-
-
     RoomRows m_rows;
     ivec2 m_selected_room{ 0,0 };
+
+    static void draw_state(
+        const char* name,
+        State* pState)
+    {
+        ImGui::Text(name);
+        ImGui::SameLine();
+
+        if (ImGui::BeginCombo((std::string("##combo") + name).c_str(), s_state_labels[(int32)*pState].c_str())) // The second parameter is the label previewed before opening the combo.
+        {
+            for (int32 i = 0; i < (int32)State::_Count; i++)
+            {
+                if (ImGui::Selectable(s_state_labels[i].c_str(), (int32)*pState == i)) *pState = (State)i;
+            }
+            ImGui::EndCombo();
+        }
+    }
 
     void draw_dungeon(
         const ImVec2 screen_pos,
@@ -291,7 +293,7 @@ private:
                 ImU32 background_alpha = 96 + (x & 1) * 16 + (y & 1) * 16;
 
                 auto& room = m_rows[y][x];
-                bool should_select = room.draw(background_alpha, room_pos, draw_list);
+                bool should_select = room.draw(background_alpha, { x, y }, room_pos, draw_list);
 
                 if (should_select)
                 {
@@ -341,23 +343,16 @@ private:
                 IM_COL32_WHITE);
         }
     }
-
-    void apply_speculative(
-        bool pit,
-        bool arrow,
-        bool dragon)
-    {
-        Room& room = m_rows[m_selected_room.y][m_selected_room.x];
-        if (!room.m_visited)
-        {
-            room.m_pit.apply(pit);
-            room.m_dragon.apply(dragon);
-            room.m_arrow.apply(arrow);
-        }
-    }
 };
 
 Dungeon s_dungeon;
+
+const Room& get_dungeon_room(
+    const ivec2& room_pos)
+{
+    return s_dungeon.get_room(room_pos);
+}
+
 
 static bool s_dragon = false;
 static bool s_pit = false;
