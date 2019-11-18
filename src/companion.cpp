@@ -1,6 +1,6 @@
 #include "companion.h"
 #include "imgui.h"
-#include <array>
+#include <vector>
 #include <string>
 
 using int32 = int32_t;
@@ -11,7 +11,7 @@ struct ivec2
     int32 y;
 };
 
-enum class State
+enum class NeighborState
 {
     Unknown,
     No,
@@ -19,14 +19,31 @@ enum class State
     _Count,
 };
 
-const std::string s_state_labels[]
+const std::string s_neighbor_state_labels[]
 {
     "Unknown",
     "No",
     "Maybe",
 };
 
-static_assert((int32)State::_Count == std::size(s_state_labels));
+enum class RoomState
+{
+    Unknown,
+    Maybe,
+    Yes,
+    No,
+    _Count,
+};
+
+const std::string s_room_state_labels[]
+{
+    "Unknown",
+    "Maybe",
+    "Yes",
+    "No",
+};
+
+static_assert((int32)NeighborState::_Count == std::size(s_neighbor_state_labels));
 
 enum class Attribute
 {
@@ -46,7 +63,9 @@ const Room& get_dungeon_room(
 class Room
 {
 public:
-    Room()
+    Room(
+        const ivec2& pos):
+        m_pos(pos)
     {
         reset();
     }
@@ -54,36 +73,237 @@ public:
     void reset()
     {
         m_visited = false;
-        m_state[(int32)Attribute::Pit] = State::Unknown;
-        m_state[(int32)Attribute::Dragon] = State::Unknown;
-        m_state[(int32)Attribute::Arrow] = State::Unknown;
+        m_neighborState[(int32)Attribute::Pit] = NeighborState::Unknown;
+        m_roomState[(int32)Attribute::Pit] = RoomState::Unknown;
+
+        m_neighborState[(int32)Attribute::Dragon] = NeighborState::Unknown;
+        m_roomState[(int32)Attribute::Dragon] = RoomState::Unknown;
+
+        m_neighborState[(int32)Attribute::Arrow] = NeighborState::Unknown;
+        m_roomState[(int32)Attribute::Arrow] = RoomState::Unknown;
     }
 
-    State get_state(
-        const ivec2& room_pos,
+    NeighborState get_neighbor_state(
         Attribute attrib)
     {
-        const Room& left = get_dungeon_room(ivec2{ room_pos.x - 1, room_pos.y });
-        const Room& right = get_dungeon_room(ivec2{ room_pos.x + 1, room_pos.y });
-        const Room& up = get_dungeon_room(ivec2{ room_pos.x, room_pos.y - 1 });
-        const Room& down = get_dungeon_room(ivec2{ room_pos.x, room_pos.y + 1 });
+        const Room& left = get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y });
+        const Room& right = get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y });
+        const Room& up = get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 });
+        const Room& down = get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 });
 
-        if (left.m_state[(int32)attrib] == State::No) return State::No;
-        if (right.m_state[(int32)attrib] == State::No) return State::No;
-        if (up.m_state[(int32)attrib] == State::No) return State::No;
-        if (down.m_state[(int32)attrib] == State::No)  return State::No;
+        if (left.m_neighborState[(int32)attrib] == NeighborState::No) return NeighborState::No;
+        if (right.m_neighborState[(int32)attrib] == NeighborState::No) return NeighborState::No;
+        if (up.m_neighborState[(int32)attrib] == NeighborState::No) return NeighborState::No;
+        if (down.m_neighborState[(int32)attrib] == NeighborState::No)  return NeighborState::No;
 
-        if (left.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
-        if (right.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
-        if (up.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
-        if (down.m_state[(int32)attrib] == State::Maybe) return State::Maybe;
+        if (left.m_neighborState[(int32)attrib] == NeighborState::Maybe) return NeighborState::Maybe;
+        if (right.m_neighborState[(int32)attrib] == NeighborState::Maybe) return NeighborState::Maybe;
+        if (up.m_neighborState[(int32)attrib] == NeighborState::Maybe) return NeighborState::Maybe;
+        if (down.m_neighborState[(int32)attrib] == NeighborState::Maybe) return NeighborState::Maybe;
 
-        return State::Unknown;
+        return NeighborState::Unknown;
+    }
+
+    const Room* get_unique_neighbor(
+        Attribute attrib) const
+    {
+        const Room* maybe = nullptr;
+        int noCounter = 0;
+
+        const Room& left = get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y });
+        if (left.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            if (maybe != nullptr)
+            {
+                return nullptr;
+            }
+            maybe = &left;
+        }
+        else if (left.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            noCounter++;
+        }
+
+        const Room& right = get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y });
+        if (right.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            if (maybe != nullptr)
+            {
+                return nullptr;
+            }
+            maybe = &right;
+        }
+        else if (right.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            noCounter++;
+        }
+
+        const Room& up = get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 });
+        if (up.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            if (maybe != nullptr)
+            {
+                return nullptr;
+            }
+            maybe = &up;
+        }
+        else if (up.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            noCounter++;
+        }
+
+        const Room& down = get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 });
+        if (down.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            if (maybe != nullptr)
+            {
+                return nullptr;
+            }
+            maybe = &down;
+        }
+        else if (down.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            noCounter++;
+        }
+
+        if (maybe != nullptr &&
+            noCounter == 3)
+        {
+            return maybe;
+        }
+
+        return nullptr;
+    }
+
+    void update_room_state_attr_no(
+        Attribute attrib,
+        const Room& left,
+        const Room& right,
+        const Room& up,
+        const Room& down)
+    {
+        m_roomState[(int32)attrib] = RoomState::Unknown;
+
+        if (left.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            m_roomState[(int32)attrib] = RoomState::No;
+        }
+
+        if (right.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            m_roomState[(int32)attrib] = RoomState::No;
+        }
+
+        if (up.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            m_roomState[(int32)attrib] = RoomState::No;
+        }
+
+        if (down.m_neighborState[(int32)attrib] == NeighborState::No)
+        {
+            m_roomState[(int32)attrib] = RoomState::No;
+        }
+    }
+
+    int32 get_no_count(
+        Attribute attrib) const
+    {
+        const Room& left = get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y });
+        const Room& right = get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y });
+        const Room& up = get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 });
+        const Room& down = get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 });
+        return
+            (int32)(left.m_roomState[(int32)attrib] == RoomState::No) +
+            (int32)(right.m_roomState[(int32)attrib] == RoomState::No) +
+            (int32)(up.m_roomState[(int32)attrib] == RoomState::No) +
+            (int32)(down.m_roomState[(int32)attrib] == RoomState::No);
+    }
+
+    void update_room_state_attr_maybe_yes(
+        Attribute attrib,
+        const Room& left,
+        const Room& right,
+        const Room& up,
+        const Room& down)
+    {
+        if (m_roomState[(int32)attrib] == RoomState::No)
+        {
+            return;
+        }
+
+        if (left.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            m_roomState[(int32)attrib] = left.get_no_count(attrib) == 3 ? RoomState::Yes : RoomState::Maybe;
+        }
+
+        if (m_roomState[(int32)attrib] != RoomState::Unknown)
+        {
+            return;
+        }
+
+        if (right.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            m_roomState[(int32)attrib] = left.get_no_count(attrib) == 3 ? RoomState::Yes : RoomState::Maybe;
+        }
+
+        if (m_roomState[(int32)attrib] != RoomState::Unknown)
+        {
+            return;
+        }
+
+        if (up.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            m_roomState[(int32)attrib] = left.get_no_count(attrib) == 3 ? RoomState::Yes : RoomState::Maybe;
+        }
+
+        if (m_roomState[(int32)attrib] != RoomState::Unknown)
+        {
+            return;
+        }
+
+        if (down.m_neighborState[(int32)attrib] == NeighborState::Maybe)
+        {
+            m_roomState[(int32)attrib] = left.get_no_count(attrib) == 3 ? RoomState::Yes : RoomState::Maybe;
+        }
+    }
+
+
+    void update_room_state_no()
+    {
+        const Room& left = get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y });
+        const Room& right = get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y });
+        const Room& up = get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 });
+        const Room& down = get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 });
+
+        update_room_state_attr_no(Attribute::Dragon, left, right, up, down);
+        update_room_state_attr_no(Attribute::Pit, left, right, up, down);
+        update_room_state_attr_no(Attribute::Arrow, left, right, up, down);
+    }
+
+    void update_room_state_maybe_yes()
+    {
+        const Room& left = get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y });
+        const Room& right = get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y });
+        const Room& up = get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 });
+        const Room& down = get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 });
+
+        update_room_state_attr_maybe_yes(Attribute::Dragon, left, right, up, down);
+        update_room_state_attr_maybe_yes(Attribute::Pit, left, right, up, down);
+        update_room_state_attr_maybe_yes(Attribute::Arrow, left, right, up, down);
+    }
+
+    bool is_state_visible(RoomState state)
+    {
+        return state == RoomState::Maybe || state == RoomState::Yes;
+    }
+
+    ImU32 get_state_color(RoomState state)
+    {
+        return state == RoomState::Maybe ? IM_COL32(255, 255, 0, 255) : IM_COL32(255, 0, 0, 255);
     }
 
     bool draw(
         ImU32 background_alpha,
-        ivec2 room_coord,
         const ImVec2& room_pos,
         ImDrawList& draw_list)
     {
@@ -103,21 +323,23 @@ public:
 
         draw_list.AddRectFilled(room_pos, room_pos_max, color);
 
+        //IM_COL32(255, 255, 0, 255)
+
         if (!m_visited)
         {
-            State dragonState = get_state(room_coord, Attribute::Dragon);
-            State pitState = get_state(room_coord, Attribute::Pit);
-            State arrowState = get_state(room_coord, Attribute::Arrow);
+            RoomState dragonState = m_roomState[(int32)Attribute::Dragon];
+            RoomState arrowState = m_roomState[(int32)Attribute::Arrow];
+            RoomState pitState = m_roomState[(int32)Attribute::Pit];
 
-            if (dragonState == State::Unknown &&
-                pitState == State::Unknown &&
-                arrowState == State::Unknown)
+            if (dragonState == RoomState::Unknown &&
+                arrowState == RoomState::Unknown &&
+                pitState == RoomState::Unknown)
             {
-                draw_list.AddText(nullptr, room_screen_size * 0.75f, { room_pos.x + room_screen_size * 0.3f, room_pos.y + room_screen_size * 0.15f }, IM_COL32_WHITE, "?");        
+                draw_list.AddText(nullptr, room_screen_size * 0.75f, { room_pos.x + room_screen_size * 0.3f, room_pos.y + room_screen_size * 0.15f }, IM_COL32_WHITE, "?");
             }
             else
             {
-                int lineCounter = (int32)(dragonState == State::Maybe) + (int32)(pitState == State::Maybe) + (int32)(arrowState == State::Maybe);
+                int lineCounter = (int32)(is_state_visible(dragonState)) + (int32)(is_state_visible(pitState)) + (int32)(is_state_visible(arrowState));
                 if (lineCounter != 0)
                 {
                     ImVec2 pos(room_pos);
@@ -135,21 +357,21 @@ public:
                         pos.y += room_screen_size * 0.1f;
                     }
 
-                    if (pitState == State::Maybe)
+                    if (is_state_visible(pitState))
                     {
-                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, IM_COL32(255, 255, 0, 255), "Pit");
+                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, get_state_color(pitState), "Pit");
                         pos.y += lineHeight;
                     }
 
-                    if (dragonState == State::Maybe)
+                    if (is_state_visible(dragonState))
                     {
-                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, IM_COL32(255, 255, 0, 255), "DRAGON");
+                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, get_state_color(dragonState), "DRAGON");
                         pos.y += lineHeight;
                     }
 
-                    if (arrowState == State::Maybe)
+                    if (is_state_visible(arrowState))
                     {
-                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, IM_COL32(255, 255, 0, 255), "Arrow");
+                        draw_list.AddText(nullptr, room_screen_size * room_font_size_mult, { pos.x + room_screen_size * 0.05f, pos.y }, get_state_color(arrowState), "Arrow");
                         pos.y += lineHeight;
                     }
                 }
@@ -159,18 +381,34 @@ public:
         return hovered && ImGui::IsMouseClicked(0);
     }
 
+    ivec2 m_pos;
     bool m_visited;
-    State m_state[(int32)Attribute::_Count];
+    NeighborState m_neighborState[(int32)Attribute::_Count];
+    RoomState m_roomState[(int32)Attribute::_Count];
 };
 
 constexpr int dungeon_size = 10;
 
-using RoomRow = std::array<Room, dungeon_size>;
-using RoomRows = std::array<RoomRow, dungeon_size>;
+using RoomRow = std::vector<Room>;
+using RoomRows = std::vector<RoomRow>;
 
 class Dungeon
 {
 public:
+    Dungeon()
+    {
+        for (int y = 0; y < dungeon_size; y++)
+        {
+            RoomRow row;
+            for (int x = 0; x < dungeon_size; x++)
+            {
+                row.push_back({ ivec2{x, y} });
+            }
+
+            m_rows.push_back(row);
+        }
+    }
+
     void draw()
     {
         float dungeon_screen_size = (dungeon_size + 1) * room_screen_size;
@@ -204,9 +442,13 @@ public:
         ImGui::Text("Position: %c:%d", m_selected_room.y + 65, m_selected_room.x);
         auto& room = m_rows[m_selected_room.y][m_selected_room.x];
         ImGui::Checkbox("Visited", &room.m_visited);
-        draw_state("Pit", &room.m_state[(int32)Attribute::Pit]);
-        draw_state("Dragon", &room.m_state[(int32)Attribute::Dragon]);
-        draw_state("Arrow", &room.m_state[(int32)Attribute::Arrow]);
+        draw_neighbor_state("Neighbor Pit", &room.m_neighborState[(int32)Attribute::Pit]);
+        draw_neighbor_state("Neighbor Dragon", &room.m_neighborState[(int32)Attribute::Dragon]);
+        draw_neighbor_state("Neighbor Arrow", &room.m_neighborState[(int32)Attribute::Arrow]);
+
+        draw_room_state("Room Pit", &room.m_roomState[(int32)Attribute::Pit]);
+        draw_room_state("Room Dragon", &room.m_roomState[(int32)Attribute::Dragon]);
+        draw_room_state("Room Arrow", &room.m_roomState[(int32)Attribute::Arrow]);
     }
 
     void move_selection(
@@ -227,19 +469,42 @@ public:
     {
         Room& room = m_rows[m_selected_room.y][m_selected_room.x];
         room.m_visited = true;
-        if (room.m_state[(int32)Attribute::Pit] != State::No)
+        if (room.m_neighborState[(int32)Attribute::Pit] != NeighborState::No)
         {
-            room.m_state[(int32)Attribute::Pit] = pit ? State::Maybe : State::No;
+            room.m_neighborState[(int32)Attribute::Pit] = pit ? NeighborState::Maybe : NeighborState::No;
         }
 
-        if (room.m_state[(int32)Attribute::Arrow] != State::No)
+        if (room.m_neighborState[(int32)Attribute::Arrow] != NeighborState::No)
         {
-            room.m_state[(int32)Attribute::Arrow] = arrow ? State::Maybe : State::No;
+            room.m_neighborState[(int32)Attribute::Arrow] = arrow ? NeighborState::Maybe : NeighborState::No;
         }
 
-        if (room.m_state[(int32)Attribute::Dragon] != State::No)
+        if (room.m_neighborState[(int32)Attribute::Dragon] != NeighborState::No)
         {
-            room.m_state[(int32)Attribute::Dragon] = dragon ? State::Maybe : State::No;
+            room.m_neighborState[(int32)Attribute::Dragon] = dragon ? NeighborState::Maybe : NeighborState::No;
+        }
+
+        update_room_states();
+    }
+
+    void update_room_states()
+    {
+        for (int y = 0; y < dungeon_size; y++)
+        {
+            for (int x = 0; x < dungeon_size; x++)
+            {
+                auto& room = m_rows[y][x];
+                room.update_room_state_no();
+            }
+        }
+
+        for (int y = 0; y < dungeon_size; y++)
+        {
+            for (int x = 0; x < dungeon_size; x++)
+            {
+                auto& room = m_rows[y][x];
+                room.update_room_state_maybe_yes();
+            }
         }
     }
 
@@ -261,18 +526,35 @@ private:
     RoomRows m_rows;
     ivec2 m_selected_room{ 0,0 };
 
-    static void draw_state(
+    static void draw_neighbor_state(
         const char* name,
-        State* pState)
+        NeighborState* pState)
     {
         ImGui::Text(name);
         ImGui::SameLine();
 
-        if (ImGui::BeginCombo((std::string("##combo") + name).c_str(), s_state_labels[(int32)*pState].c_str())) // The second parameter is the label previewed before opening the combo.
+        if (ImGui::BeginCombo((std::string("##combo") + name).c_str(), s_neighbor_state_labels[(int32)*pState].c_str())) // The second parameter is the label previewed before opening the combo.
         {
-            for (int32 i = 0; i < (int32)State::_Count; i++)
+            for (int32 i = 0; i < (int32)NeighborState::_Count; i++)
             {
-                if (ImGui::Selectable(s_state_labels[i].c_str(), (int32)*pState == i)) *pState = (State)i;
+                if (ImGui::Selectable(s_neighbor_state_labels[i].c_str(), (int32)*pState == i)) *pState = (NeighborState)i;
+            }
+            ImGui::EndCombo();
+        }
+    }
+
+    static void draw_room_state(
+        const char* name,
+        RoomState* pState)
+    {
+        ImGui::Text(name);
+        ImGui::SameLine();
+
+        if (ImGui::BeginCombo((std::string("##combo") + name).c_str(), s_room_state_labels[(int32)*pState].c_str())) // The second parameter is the label previewed before opening the combo.
+        {
+            for (int32 i = 0; i < (int32)RoomState::_Count; i++)
+            {
+                if (ImGui::Selectable(s_room_state_labels[i].c_str(), (int32)*pState == i)) *pState = (RoomState)i;
             }
             ImGui::EndCombo();
         }
@@ -293,7 +575,7 @@ private:
                 ImU32 background_alpha = 96 + (x & 1) * 16 + (y & 1) * 16;
 
                 auto& room = m_rows[y][x];
-                bool should_select = room.draw(background_alpha, { x, y }, room_pos, draw_list);
+                bool should_select = room.draw(background_alpha, room_pos, draw_list);
 
                 if (should_select)
                 {
@@ -309,7 +591,6 @@ private:
         draw_list.AddLine({ room_pos.x, room_pos.y }, { room_pos_max.x, room_pos.y }, IM_COL32(32, 32, 255, 255), 3.f);
         draw_list.AddLine({ room_pos.x, room_pos_max.y }, { room_pos_max.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
         draw_list.AddLine({ room_pos_max.x, room_pos.y }, { room_pos_max.x, room_pos_max.y }, IM_COL32(32, 32, 255, 255), 3.f);
-
     }
 
     void draw_grid(
