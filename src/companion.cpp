@@ -46,6 +46,16 @@ const std::string s_room_state_labels[]
 
 static_assert(ns__Count == std::size(s_neighbor_state_labels));
 
+bool is_state_visible(RoomState state)
+{
+    return state == rs_Maybe || state == rs_Yes;
+}
+
+ImU32 get_state_color(RoomState state)
+{
+    return state == rs_Maybe ? IM_COL32(255, 255, 0, 255) : IM_COL32(255, 0, 0, 255);
+}
+
 enum Attribute
 {
     a_Pit,
@@ -83,87 +93,6 @@ public:
         }
     }
 
-    NeighborArray get_neighbor_rooms() const
-    {
-        return {
-            &get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y }),
-            &get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y }),
-            &get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 }),
-            &get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 })
-        };
-    }
-
-    NeighborState get_neighbor_state(
-        Attribute attrib)
-    {
-        NeighborArray neighbor_rooms = get_neighbor_rooms();
-
-        for (auto neighbor_room : neighbor_rooms)
-        {
-            if (neighbor_room->m_neighborState[attrib] == ns_No)
-                return ns_No;
-        }
-
-        for (auto neighbor_room : neighbor_rooms)
-        {
-            if (neighbor_room->m_neighborState[attrib] == ns_Maybe)
-                return ns_Maybe;
-        }
-
-        return ns_Unknown;
-    }
-
-    void update_room_state_attr_no(
-        Attribute attrib,
-        const NeighborArray& neighbor_rooms)
-    {
-        m_roomState[attrib] = rs_Unknown;
-
-        for (auto neighbor_room : neighbor_rooms)
-        {
-            if (neighbor_room->m_neighborState[attrib] == ns_No)
-            {
-                m_roomState[attrib] = rs_No;
-            }
-        }
-    }
-
-    int32 get_no_count(
-        Attribute attrib) const
-    {
-        NeighborArray neighbor_rooms = get_neighbor_rooms();
-
-        return
-            (int32)(neighbor_rooms[0]->m_roomState[attrib] == rs_No) +
-            (int32)(neighbor_rooms[1]->m_roomState[attrib] == rs_No) +
-            (int32)(neighbor_rooms[2]->m_roomState[attrib] == rs_No) +
-            (int32)(neighbor_rooms[3]->m_roomState[attrib] == rs_No);
-    }
-
-    void update_room_state_attr_maybe_yes(
-        Attribute attrib,
-        const NeighborArray& neighbor_rooms)
-    {
-        if (m_roomState[attrib] == rs_No)
-        {
-            return;
-        }
-
-        for (auto neighbor_room : neighbor_rooms)
-        {
-            if (neighbor_room->m_neighborState[attrib] == ns_Maybe)
-            {
-                m_roomState[attrib] = neighbor_room->get_no_count(attrib) == 3 ? rs_Yes : rs_Maybe;
-            }
-
-            if (m_roomState[attrib] != rs_Unknown)
-            {
-                return;
-            }
-        }
-    }
-
-
     void update_room_state_no()
     {
         NeighborArray neighbor_rooms = get_neighbor_rooms();
@@ -180,16 +109,6 @@ public:
         {
             update_room_state_attr_maybe_yes((Attribute)i, neighbor_rooms);
         }
-    }
-
-    bool is_state_visible(RoomState state)
-    {
-        return state == rs_Maybe || state == rs_Yes;
-    }
-
-    ImU32 get_state_color(RoomState state)
-    {
-        return state == rs_Maybe ? IM_COL32(255, 255, 0, 255) : IM_COL32(255, 0, 0, 255);
     }
 
     bool draw(
@@ -273,6 +192,87 @@ public:
     bool m_visited;
     NeighborState m_neighborState[a__Count];
     RoomState m_roomState[a__Count];
+
+private:
+    NeighborArray get_neighbor_rooms() const
+    {
+        return {
+            &get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y }),
+            &get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y }),
+            &get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 }),
+            &get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 })
+        };
+    }
+
+    NeighborState get_neighbor_state(
+        Attribute attrib) const
+    {
+        NeighborArray neighbor_rooms = get_neighbor_rooms();
+
+        for (auto neighbor_room : neighbor_rooms)
+        {
+            if (neighbor_room->m_neighborState[attrib] == ns_No)
+                return ns_No;
+        }
+
+        for (auto neighbor_room : neighbor_rooms)
+        {
+            if (neighbor_room->m_neighborState[attrib] == ns_Maybe)
+                return ns_Maybe;
+        }
+
+        return ns_Unknown;
+    }
+
+    void update_room_state_attr_no(
+        Attribute attrib,
+        const NeighborArray& neighbor_rooms)
+    {
+        m_roomState[attrib] = rs_Unknown;
+
+        for (auto neighbor_room : neighbor_rooms)
+        {
+            if (neighbor_room->m_neighborState[attrib] == ns_No)
+            {
+                m_roomState[attrib] = rs_No;
+            }
+        }
+    }
+
+    int32 get_neighbor_attr_no_count(
+        Attribute attrib) const
+    {
+        NeighborArray neighbor_rooms = get_neighbor_rooms();
+
+        return
+            (int32)(neighbor_rooms[0]->m_roomState[attrib] == rs_No) +
+            (int32)(neighbor_rooms[1]->m_roomState[attrib] == rs_No) +
+            (int32)(neighbor_rooms[2]->m_roomState[attrib] == rs_No) +
+            (int32)(neighbor_rooms[3]->m_roomState[attrib] == rs_No);
+    }
+
+    void update_room_state_attr_maybe_yes(
+        Attribute attrib,
+        const NeighborArray& neighbor_rooms)
+    {
+        if (m_roomState[attrib] == rs_No)
+        {
+            return;
+        }
+
+        for (auto neighbor_room : neighbor_rooms)
+        {
+            if (neighbor_room->m_neighborState[attrib] == ns_Maybe)
+            {
+                m_roomState[attrib] = neighbor_room->get_neighbor_attr_no_count(attrib) == 3 ? rs_Yes : rs_Maybe;
+            }
+
+            if (m_roomState[attrib] != rs_Unknown)
+            {
+                return;
+            }
+        }
+    }
 };
 
 constexpr int dungeon_size = 10;
