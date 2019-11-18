@@ -64,7 +64,7 @@ class Room
 {
 public:
     Room(
-        const ivec2& pos):
+        const ivec2& pos) :
         m_pos(pos)
     {
         reset();
@@ -508,7 +508,7 @@ private:
 
                 if (should_select)
                 {
-                    m_selected_room = {x, y};
+                    m_selected_room = { x, y };
                 }
             }
         }
@@ -575,23 +575,23 @@ void actions_draw()
     if (ImGui::Button(" ^ ") ||
         ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
     {
-        s_dungeon.move_selection({0, -1});
+        s_dungeon.move_selection({ 0, -1 });
     }
-    
+
     if (ImGui::Button(" < ") ||
         ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_LeftArrow)))
     {
         s_dungeon.move_selection({ -1, 0 });
     }
     ImGui::SameLine();
-    
+
     if (ImGui::Button(" v ") ||
         ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
     {
         s_dungeon.move_selection({ 0, 1 });
     }
     ImGui::SameLine();
-    
+
     if (ImGui::Button(" > ") ||
         ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
     {
@@ -635,7 +635,7 @@ void companion_draw()
     ImGui::Text("Welcome to Mattel DnD Portable Companion!");
     s_dungeon.draw();
     ImGui::SameLine();
-    ImGui::Dummy({305.f, 0.f});
+    ImGui::Dummy({ 305.f, 0.f });
     ImGui::SameLine();
     ImGui::Text("(c) 2019 Norbert Szabo");
     ImGui::End();
