@@ -1,6 +1,7 @@
 #include "companion.h"
 #include "imgui.h"
 #include <vector>
+#include <array>
 #include <string>
 
 using int32 = int32_t;
@@ -73,33 +74,34 @@ public:
     void reset()
     {
         m_visited = false;
-        m_neighborState[a_Pit] = ns_Unknown;
-        m_roomState[a_Pit] = rs_Unknown;
-
-        m_neighborState[a_Dragon] = ns_Unknown;
-        m_roomState[a_Dragon] = rs_Unknown;
-
-        m_neighborState[a_Arrow] = ns_Unknown;
-        m_roomState[a_Arrow] = rs_Unknown;
+        for (int32 i = 0; i < a__Count; i++)
+        {
+            m_neighborState[i] = ns_Unknown;
+            m_roomState[i] = rs_Unknown;
+        }
     }
 
     NeighborState get_neighbor_state(
         Attribute attrib)
     {
-        const Room& left = get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y });
-        const Room& right = get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y });
-        const Room& up = get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 });
-        const Room& down = get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 });
+        std::array< const Room*, 4 > neighbor_rooms = {
+            &get_dungeon_room(ivec2{ m_pos.x - 1, m_pos.y }),
+            &get_dungeon_room(ivec2{ m_pos.x + 1, m_pos.y }),
+            &get_dungeon_room(ivec2{ m_pos.x, m_pos.y - 1 }),
+            &get_dungeon_room(ivec2{ m_pos.x, m_pos.y + 1 })
+        };
 
-        if (left.m_neighborState[attrib] == ns_No) return ns_No;
-        if (right.m_neighborState[attrib] == ns_No) return ns_No;
-        if (up.m_neighborState[attrib] == ns_No) return ns_No;
-        if (down.m_neighborState[attrib] == ns_No)  return ns_No;
+        for (auto neighbor_room : neighbor_rooms)
+        {
+            if (neighbor_room->m_neighborState[attrib] == ns_No)
+                return ns_No;
+        }
 
-        if (left.m_neighborState[attrib] == ns_Maybe) return ns_Maybe;
-        if (right.m_neighborState[attrib] == ns_Maybe) return ns_Maybe;
-        if (up.m_neighborState[attrib] == ns_Maybe) return ns_Maybe;
-        if (down.m_neighborState[attrib] == ns_Maybe) return ns_Maybe;
+        for (auto neighbor_room : neighbor_rooms)
+        {
+            if (neighbor_room->m_neighborState[attrib] == ns_Maybe)
+                return ns_Maybe;
+        }
 
         return ns_Unknown;
     }
