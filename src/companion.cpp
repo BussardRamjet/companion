@@ -4,6 +4,7 @@
 #include <array>
 #include <string>
 
+// Naming conventions:
 // pod types - lowercase
 // types,using - PascalCase
 // functions - snake_case
@@ -11,7 +12,7 @@
 // members variables - snake_case with m_ prefix
 // static variables - snake_case
 // enums - PascalCase
-// enum values - ENUM_
+// enum values - enum_abbrv_PascalCase
 
 
 //////////////////////////////
@@ -64,11 +65,18 @@ void draw_neighbor_state(
     ImGui::Text(name);
     ImGui::SameLine();
 
-    if (ImGui::BeginCombo((std::string("##combo") + name).c_str(), s_neighbor_state_labels[*pState].c_str())) // The second parameter is the label previewed before opening the combo.
+    if (ImGui::BeginCombo(
+            (std::string("##comboNeighbor") + name).c_str(),
+            s_neighbor_state_labels[*pState].c_str())) // The second parameter is the label previewed before opening the combo.
     {
         for (int32 i = 0; i < ns__Count; i++)
         {
-            if (ImGui::Selectable(s_neighbor_state_labels[i].c_str(), *pState == i)) *pState = (NeighborState)i;
+            if (ImGui::Selectable(
+                s_neighbor_state_labels[i].c_str(),
+                *pState == i))
+            {
+                *pState = (NeighborState)i;
+            }
         }
         ImGui::EndCombo();
     }
@@ -122,11 +130,18 @@ void draw_room_state(
     ImGui::Text(name);
     ImGui::SameLine();
 
-    if (ImGui::BeginCombo((std::string("##combo") + name).c_str(), s_room_state_labels[*pState].c_str())) // The second parameter is the label previewed before opening the combo.
+    if (ImGui::BeginCombo(
+        (std::string("##comboRoom") + name).c_str(), 
+        s_room_state_labels[*pState].c_str())) // The second parameter is the label previewed before opening the combo.
     {
         for (int32 i = 0; i < rs__Count; i++)
         {
-            if (ImGui::Selectable(s_room_state_labels[i].c_str(), *pState == i)) *pState = (RoomState)i;
+            if (ImGui::Selectable(
+                s_room_state_labels[i].c_str(),
+                *pState == i))
+            {
+                *pState = (RoomState)i;
+            }
         }
         ImGui::EndCombo();
     }
@@ -178,8 +193,8 @@ public:
         m_visited = false;
         for (int32 i = 0; i < a__Count; i++)
         {
-            m_neighborState[i] = ns_Unknown;
-            m_roomState[i] = rs_Unknown;
+            m_neighbor_state[i] = ns_Unknown;
+            m_room_state[i] = rs_Unknown;
         }
     }
 
@@ -224,9 +239,9 @@ public:
 
         if (!m_visited)
         {
-            if (m_roomState[a_Dragon] == rs_Unknown &&
-                m_roomState[a_Arrow] == rs_Unknown &&
-                m_roomState[a_Pit] == rs_Unknown)
+            if (m_room_state[a_Dragon] == rs_Unknown &&
+                m_room_state[a_Arrow] == rs_Unknown &&
+                m_room_state[a_Pit] == rs_Unknown)
             {
                 draw_list.AddText(
                     nullptr, 
@@ -238,9 +253,9 @@ public:
             else
             {
                 int lineCounter = 
-                    (int32)(is_state_visible(m_roomState[a_Dragon])) +
-                    (int32)(is_state_visible(m_roomState[a_Arrow])) +
-                    (int32)(is_state_visible(m_roomState[a_Pit]));
+                    (int32)(is_state_visible(m_room_state[a_Dragon])) +
+                    (int32)(is_state_visible(m_room_state[a_Arrow])) +
+                    (int32)(is_state_visible(m_room_state[a_Pit]));
 
                 if (lineCounter != 0)
                 {
@@ -261,13 +276,13 @@ public:
 
                     for (int32 i = 0; i < a__Count; i++)
                     {
-                        if (is_state_visible(m_roomState[i]))
+                        if (is_state_visible(m_room_state[i]))
                         {
                             draw_list.AddText(
                                 nullptr,
                                 room_screen_size * room_font_size_mult,
                                 { pos.x + room_screen_size * 0.05f, pos.y },
-                                get_state_color(m_roomState[i]),
+                                get_state_color(m_room_state[i]),
                                 s_attribute_labels[i].c_str());
 
                             pos.y += lineHeight;
@@ -281,8 +296,8 @@ public:
     }
 
     bool m_visited;
-    NeighborState m_neighborState[a__Count];
-    RoomState m_roomState[a__Count];
+    NeighborState m_neighbor_state[a__Count];
+    RoomState m_room_state[a__Count];
 
 private:
     ivec2 m_pos;
@@ -304,13 +319,13 @@ private:
 
         for (auto neighbor_room : neighbor_rooms)
         {
-            if (neighbor_room->m_neighborState[attrib] == ns_No)
+            if (neighbor_room->m_neighbor_state[attrib] == ns_No)
                 return ns_No;
         }
 
         for (auto neighbor_room : neighbor_rooms)
         {
-            if (neighbor_room->m_neighborState[attrib] == ns_Maybe)
+            if (neighbor_room->m_neighbor_state[attrib] == ns_Maybe)
                 return ns_Maybe;
         }
 
@@ -321,13 +336,13 @@ private:
         const Attribute attrib,
         const NeighborArray& neighbor_rooms)
     {
-        m_roomState[attrib] = rs_Unknown;
+        m_room_state[attrib] = rs_Unknown;
 
         for (auto neighbor_room : neighbor_rooms)
         {
-            if (neighbor_room->m_neighborState[attrib] == ns_No)
+            if (neighbor_room->m_neighbor_state[attrib] == ns_No)
             {
-                m_roomState[attrib] = rs_No;
+                m_room_state[attrib] = rs_No;
             }
         }
     }
@@ -338,29 +353,29 @@ private:
         NeighborArray neighbor_rooms = get_neighbor_rooms();
 
         return
-            (int32)(neighbor_rooms[0]->m_roomState[attrib] == rs_No) +
-            (int32)(neighbor_rooms[1]->m_roomState[attrib] == rs_No) +
-            (int32)(neighbor_rooms[2]->m_roomState[attrib] == rs_No) +
-            (int32)(neighbor_rooms[3]->m_roomState[attrib] == rs_No);
+            (int32)(neighbor_rooms[0]->m_room_state[attrib] == rs_No) +
+            (int32)(neighbor_rooms[1]->m_room_state[attrib] == rs_No) +
+            (int32)(neighbor_rooms[2]->m_room_state[attrib] == rs_No) +
+            (int32)(neighbor_rooms[3]->m_room_state[attrib] == rs_No);
     }
 
     void update_room_state_attr_maybe_yes(
         const Attribute attrib,
         const NeighborArray& neighbor_rooms)
     {
-        if (m_roomState[attrib] == rs_No)
+        if (m_room_state[attrib] == rs_No)
         {
             return;
         }
 
         for (auto neighbor_room : neighbor_rooms)
         {
-            if (neighbor_room->m_neighborState[attrib] == ns_Maybe)
+            if (neighbor_room->m_neighbor_state[attrib] == ns_Maybe)
             {
-                m_roomState[attrib] = neighbor_room->get_neighbor_attr_no_count(attrib) == 3 ? rs_Yes : rs_Maybe;
+                m_room_state[attrib] = neighbor_room->get_neighbor_attr_no_count(attrib) == 3 ? rs_Yes : rs_Maybe;
             }
 
-            if (m_roomState[attrib] != rs_Unknown)
+            if (m_room_state[attrib] != rs_Unknown)
             {
                 return;
             }
@@ -425,13 +440,18 @@ public:
         ImGui::Text("Position: %c:%d", m_selected_room.y + 65, m_selected_room.x);
         auto& room = m_rows[m_selected_room.y][m_selected_room.x];
         ImGui::Checkbox("Visited", &room.m_visited);
-        draw_neighbor_state("Neighbor Pit", &room.m_neighborState[a_Pit]);
-        draw_neighbor_state("Neighbor Dragon", &room.m_neighborState[a_Dragon]);
-        draw_neighbor_state("Neighbor Arrow", &room.m_neighborState[a_Arrow]);
+        ImGui::Text("Neighbor");
 
-        draw_room_state("Room Pit", &room.m_roomState[a_Pit]);
-        draw_room_state("Room Dragon", &room.m_roomState[a_Dragon]);
-        draw_room_state("Room Arrow", &room.m_roomState[a_Arrow]);
+        for (int32 i = 0; i < a__Count; i++)
+        {
+            draw_neighbor_state(s_attribute_labels[i].c_str(), &room.m_neighbor_state[i]);
+        }
+
+        ImGui::Text("Room");
+        for (int32 i = 0; i < a__Count; i++)
+        {
+            draw_room_state(s_attribute_labels[i].c_str(), &room.m_room_state[i]);
+        }
     }
 
     void move_selection(
@@ -452,19 +472,19 @@ public:
     {
         Room& room = m_rows[m_selected_room.y][m_selected_room.x];
         room.m_visited = true;
-        if (room.m_neighborState[a_Pit] != ns_No)
+        if (room.m_neighbor_state[a_Pit] != ns_No)
         {
-            room.m_neighborState[a_Pit] = pit ? ns_Maybe : ns_No;
+            room.m_neighbor_state[a_Pit] = pit ? ns_Maybe : ns_No;
         }
 
-        if (room.m_neighborState[a_Arrow] != ns_No)
+        if (room.m_neighbor_state[a_Arrow] != ns_No)
         {
-            room.m_neighborState[a_Arrow] = arrow ? ns_Maybe : ns_No;
+            room.m_neighbor_state[a_Arrow] = arrow ? ns_Maybe : ns_No;
         }
 
-        if (room.m_neighborState[a_Dragon] != ns_No)
+        if (room.m_neighbor_state[a_Dragon] != ns_No)
         {
-            room.m_neighborState[a_Dragon] = dragon ? ns_Maybe : ns_No;
+            room.m_neighbor_state[a_Dragon] = dragon ? ns_Maybe : ns_No;
         }
 
         update_room_states();
