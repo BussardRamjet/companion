@@ -45,7 +45,7 @@ enum NeighborState
 {
     ns_Unknown,
     ns_No,
-    ns_Maybe,
+    ns_Yes,
     ns__Count,
 };
 
@@ -53,7 +53,7 @@ const std::string s_neighbor_state_labels[]
 {
     "Unknown",
     "No",
-    "Maybe",
+    "Yes",
 };
 
 static_assert(ns__Count == std::size(s_neighbor_state_labels));
@@ -237,56 +237,53 @@ public:
 
         draw_list.AddRectFilled(room_pos, room_pos_max, color);
 
-        if (!m_visited)
+        if (m_room_state[a_Dragon] == rs_Unknown &&
+            m_room_state[a_Arrow] == rs_Unknown &&
+            m_room_state[a_Pit] == rs_Unknown)
         {
-            if (m_room_state[a_Dragon] == rs_Unknown &&
-                m_room_state[a_Arrow] == rs_Unknown &&
-                m_room_state[a_Pit] == rs_Unknown)
-            {
-                draw_list.AddText(
-                    nullptr, 
-                    room_screen_size * 0.75f, 
-                    { room_pos.x + room_screen_size * 0.3f, room_pos.y + room_screen_size * 0.15f }, 
-                    IM_COL32_WHITE, 
-                    "?");
-            }
-            else
-            {
-                int lineCounter = 
-                    (int32)(is_state_visible(m_room_state[a_Dragon])) +
-                    (int32)(is_state_visible(m_room_state[a_Arrow])) +
-                    (int32)(is_state_visible(m_room_state[a_Pit]));
+            draw_list.AddText(
+                nullptr, 
+                room_screen_size * 0.75f, 
+                { room_pos.x + room_screen_size * 0.3f, room_pos.y + room_screen_size * 0.15f }, 
+                IM_COL32_WHITE, 
+                "?");
+        }
+        else
+        {
+            int lineCounter = 
+                (int32)(is_state_visible(m_room_state[a_Dragon])) +
+                (int32)(is_state_visible(m_room_state[a_Arrow])) +
+                (int32)(is_state_visible(m_room_state[a_Pit]));
 
-                if (lineCounter != 0)
+            if (lineCounter != 0)
+            {
+                ImVec2 pos(room_pos);
+                float lineHeight = room_screen_size * room_font_size_mult;
+                if (lineCounter == 1)
                 {
-                    ImVec2 pos(room_pos);
-                    float lineHeight = room_screen_size * room_font_size_mult;
-                    if (lineCounter == 1)
-                    {
-                        pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 2.f;
-                    }
-                    else if (lineCounter == 2)
-                    {
-                        pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 3.f;
-                    }
-                    else if (lineCounter == 3)
-                    {
-                        pos.y += room_screen_size * 0.1f;
-                    }
+                    pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 2.f;
+                }
+                else if (lineCounter == 2)
+                {
+                    pos.y += (room_screen_size - (room_screen_size * room_font_size_mult)) / 3.f;
+                }
+                else if (lineCounter == 3)
+                {
+                    pos.y += room_screen_size * 0.1f;
+                }
 
-                    for (int32 i = 0; i < a__Count; i++)
+                for (int32 i = 0; i < a__Count; i++)
+                {
+                    if (is_state_visible(m_room_state[i]))
                     {
-                        if (is_state_visible(m_room_state[i]))
-                        {
-                            draw_list.AddText(
-                                nullptr,
-                                room_screen_size * room_font_size_mult,
-                                { pos.x + room_screen_size * 0.05f, pos.y },
-                                get_state_color(m_room_state[i]),
-                                s_attribute_labels[i].c_str());
+                        draw_list.AddText(
+                            nullptr,
+                            room_screen_size * room_font_size_mult,
+                            { pos.x + room_screen_size * 0.05f, pos.y },
+                            get_state_color(m_room_state[i]),
+                            s_attribute_labels[i].c_str());
 
-                            pos.y += lineHeight;
-                        }
+                        pos.y += lineHeight;
                     }
                 }
             }
@@ -325,8 +322,8 @@ private:
 
         for (auto neighbor_room : neighbor_rooms)
         {
-            if (neighbor_room->m_neighbor_state[attrib] == ns_Maybe)
-                return ns_Maybe;
+            if (neighbor_room->m_neighbor_state[attrib] == ns_Yes)
+                return ns_Yes;
         }
 
         return ns_Unknown;
@@ -336,6 +333,12 @@ private:
         const Attribute attrib,
         const NeighborArray& neighbor_rooms)
     {
+        if (m_room_state[attrib] == rs_No ||
+            m_room_state[attrib] == rs_Yes)
+        {
+            return;
+        }
+
         m_room_state[attrib] = rs_Unknown;
 
         for (auto neighbor_room : neighbor_rooms)
@@ -363,14 +366,15 @@ private:
         const Attribute attrib,
         const NeighborArray& neighbor_rooms)
     {
-        if (m_room_state[attrib] == rs_No)
+        if (m_room_state[attrib] == rs_No || 
+            m_room_state[attrib] == rs_Yes)
         {
             return;
         }
 
         for (auto neighbor_room : neighbor_rooms)
         {
-            if (neighbor_room->m_neighbor_state[attrib] == ns_Maybe)
+            if (neighbor_room->m_neighbor_state[attrib] == ns_Yes)
             {
                 m_room_state[attrib] = neighbor_room->get_neighbor_attr_no_count(attrib) == 3 ? rs_Yes : rs_Maybe;
             }
@@ -479,21 +483,39 @@ public:
     {
         Room& room = m_rows[m_selected_room.y][m_selected_room.x];
         room.m_visited = true;
+
+        if (room.m_room_state[a_Pit] != rs_Yes)
+            room.m_room_state[a_Pit] = rs_No;
+
+        if (room.m_room_state[a_Arrow] != rs_Yes)
+            room.m_room_state[a_Arrow] = rs_No;
+
+        if (room.m_room_state[a_Dragon] != rs_Yes)
+            room.m_room_state[a_Dragon] = rs_No;
+
         if (room.m_neighbor_state[a_Pit] != ns_No)
         {
-            room.m_neighbor_state[a_Pit] = pit ? ns_Maybe : ns_No;
+            room.m_neighbor_state[a_Pit] = pit ? ns_Yes : ns_No;
         }
 
         if (room.m_neighbor_state[a_Arrow] != ns_No)
         {
-            room.m_neighbor_state[a_Arrow] = arrow ? ns_Maybe : ns_No;
+            room.m_neighbor_state[a_Arrow] = arrow ? ns_Yes : ns_No;
         }
 
         if (room.m_neighbor_state[a_Dragon] != ns_No)
         {
-            room.m_neighbor_state[a_Dragon] = dragon ? ns_Maybe : ns_No;
+            room.m_neighbor_state[a_Dragon] = dragon ? ns_Yes : ns_No;
         }
 
+        update_room_states();
+    }
+
+    void found_a_pit()
+    {
+        Room& room = m_rows[m_selected_room.y][m_selected_room.x];
+        room.m_visited = true;
+        room.m_room_state[a_Pit] = rs_Yes;
         update_room_states();
     }
 
@@ -711,6 +733,13 @@ private:
             ImGui::IsKeyPressed(' '))
         {
             m_dungeon.explore(m_pit, m_arrow, m_dragon);
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Found a Pit!"))
+        {
+            m_dungeon.found_a_pit();
         }
     }
 };
