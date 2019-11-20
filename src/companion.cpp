@@ -437,9 +437,15 @@ public:
 
     void draw_selected_room_details()
     {
+        ImGui::Text("Use this panel only to inspect/adjust");
+        ImGui::Text("rooms if you messed something up.");
+
+        ImGui::Separator();
+
         ImGui::Text("Position: %c:%d", m_selected_room.y + 65, m_selected_room.x);
         auto& room = m_rows[m_selected_room.y][m_selected_room.x];
         ImGui::Checkbox("Visited", &room.m_visited);
+        ImGui::Separator();
         ImGui::Text("Neighbor");
 
         for (int32 i = 0; i < a__Count; i++)
@@ -447,6 +453,7 @@ public:
             draw_neighbor_state(s_attribute_labels[i].c_str(), &room.m_neighbor_state[i]);
         }
 
+        ImGui::Separator();
         ImGui::Text("Room");
         for (int32 i = 0; i < a__Count; i++)
         {
@@ -602,95 +609,125 @@ private:
     }
 };
 
-Dungeon s_dungeon;
+//////////////////////////////
+// Companion
+//////////////////////////////
+
+class Companion
+{
+public:
+
+    void draw()
+    {
+
+        ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::Text("Welcome to Mattel DnD Portable Companion!");
+        ImGui::Text("(c) 2019 Norbert Szabo");
+        ImGui::End();
+
+        ImGui::Begin("Dungeon", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        m_dungeon.draw();
+        ImGui::End();
+
+        ImGui::Begin("Room properties", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        m_dungeon.draw_selected_room_details();
+        ImGui::End();
+
+        ImGui::Begin("Actions", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        actions_draw();
+        ImGui::End();
+    }
+
+    const Room& get_dungeon_room(
+        const ivec2& room_pos)
+    {
+        return m_dungeon.get_room(room_pos);
+    }
+
+private:
+    Dungeon m_dungeon;
+
+    bool m_dragon = false;
+    bool m_pit = false;
+    bool m_arrow = false;
+
+    void actions_draw()
+    {
+        ImGui::Dummy({ 29.f, 0.f });
+        ImGui::SameLine();
+        if (ImGui::Button(" ^ ") ||
+            ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
+        {
+            m_dungeon.move_selection({ 0, -1 });
+        }
+
+        if (ImGui::Button(" < ") ||
+            ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_LeftArrow)))
+        {
+            m_dungeon.move_selection({ -1, 0 });
+        }
+        ImGui::SameLine();
+
+        if (ImGui::Button(" v ") ||
+            ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
+        {
+            m_dungeon.move_selection({ 0, 1 });
+        }
+        ImGui::SameLine();
+
+        if (ImGui::Button(" > ") ||
+            ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
+        {
+            m_dungeon.move_selection({ 1, 0 });
+        }
+
+        ImGui::Dummy({ 4.f, 4.f });
+        ImGui::Separator();
+        ImGui::Dummy({ 4.f, 4.f });
+
+        ImGui::Checkbox("Pit", &m_pit);
+
+        if (ImGui::IsKeyPressed('P'))
+        {
+            m_pit = !m_pit;
+        }
+
+        ImGui::Checkbox("Arrow", &m_arrow);
+        if (ImGui::IsKeyPressed('A'))
+        {
+            m_arrow = !m_arrow;
+        }
+
+        ImGui::Checkbox("Dragon", &m_dragon);
+        if (ImGui::IsKeyPressed('D'))
+        {
+            m_dragon = !m_dragon;
+        }
+
+        ImGui::Dummy({ 4.f, 2.f });
+        ImGui::Dummy({ 9.f, 0.f });
+        ImGui::SameLine();
+        if (ImGui::Button("Explore!") ||
+            ImGui::IsKeyPressed(' '))
+        {
+            m_dungeon.explore(m_pit, m_arrow, m_dragon);
+        }
+    }
+};
+
+static Companion s_companion;
 
 const Room& get_dungeon_room(
     const ivec2& room_pos)
 {
-    return s_dungeon.get_room(room_pos);
+    return s_companion.get_dungeon_room(room_pos);
 }
 
-static bool s_dragon = false;
-static bool s_pit = false;
-static bool s_arrow = false;
 
-void actions_draw()
-{
-    ImGui::Dummy({ 29.f, 0.f });
-    ImGui::SameLine();
-    if (ImGui::Button(" ^ ") ||
-        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
-    {
-        s_dungeon.move_selection({ 0, -1 });
-    }
-
-    if (ImGui::Button(" < ") ||
-        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_LeftArrow)))
-    {
-        s_dungeon.move_selection({ -1, 0 });
-    }
-    ImGui::SameLine();
-
-    if (ImGui::Button(" v ") ||
-        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
-    {
-        s_dungeon.move_selection({ 0, 1 });
-    }
-    ImGui::SameLine();
-
-    if (ImGui::Button(" > ") ||
-        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
-    {
-        s_dungeon.move_selection({ 1, 0 });
-    }
-
-    ImGui::Dummy({ 4.f, 16.f });
-
-    ImGui::Checkbox("Pit", &s_pit);
-
-    if (ImGui::IsKeyPressed('P'))
-    {
-        s_pit = !s_pit;
-    }
-
-    ImGui::Checkbox("Arrow", &s_arrow);
-    if (ImGui::IsKeyPressed('A'))
-    {
-        s_arrow = !s_arrow;
-    }
-
-    ImGui::Checkbox("Dragon", &s_dragon);
-    if (ImGui::IsKeyPressed('D'))
-    {
-        s_dragon = !s_dragon;
-    }
-
-    ImGui::Dummy({ 4.f, 2.f });
-    ImGui::Dummy({ 9.f, 0.f });
-    ImGui::SameLine();
-    if (ImGui::Button("Explore!") ||
-        ImGui::IsKeyPressed(' '))
-    {
-        s_dungeon.explore(s_pit, s_arrow, s_dragon);
-    }
-}
-
+//////////////////////////////
+// Main entry point
+//////////////////////////////
 void companion_draw()
 {
-    ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Text("Welcome to Mattel DnD Portable Companion!");
-    s_dungeon.draw();
-    ImGui::SameLine();
-    ImGui::Dummy({ 305.f, 0.f });
-    ImGui::SameLine();
-    ImGui::Text("(c) 2019 Norbert Szabo");
-    ImGui::End();
-
-    ImGui::Begin("Room", 0, ImGuiWindowFlags_AlwaysAutoResize);
-    s_dungeon.draw_selected_room_details();
-    ImGui::End();
-
-    ImGui::Begin("Actions", 0, ImGuiWindowFlags_AlwaysAutoResize);
-    actions_draw();
-    ImGui::End();
+    s_companion.draw();
 }
