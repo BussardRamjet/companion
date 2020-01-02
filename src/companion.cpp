@@ -634,6 +634,26 @@ private:
 };
 
 //////////////////////////////
+// Layout
+//////////////////////////////
+
+class Layout
+{
+public:
+    const ImVec2 m_companionPos;
+    const ImVec2 m_dungeonPos;
+    const ImVec2 m_roomPropertiesPos;
+    const ImVec2 m_actionsPos;
+};
+
+static const Layout layout{ // Cannot do constexrp :(
+    { 612.f, 579.f },
+    { 17.f, 14.f },
+    { 615.f, 15.f },
+    { 693.f, 325.f }
+};
+
+//////////////////////////////
 // Companion
 //////////////////////////////
 
@@ -649,26 +669,25 @@ constexpr uint32 windowSettings =
 class Companion
 {
 public:
-
     void draw()
     {
-        ImGui::SetNextWindowPos({ 612.f, 579.f });
+        ImGui::SetNextWindowPos(layout.m_companionPos);
         ImGui::Begin("Companion", 0, windowSettings);
         ImGui::Text("Welcome to Mattel DnD Portable Companion!");
         ImGui::Text("(c) 2019 Norbert Szabo");
         ImGui::End();
 
-        ImGui::SetNextWindowPos({ 17.f, 14.f });
+        ImGui::SetNextWindowPos(layout.m_dungeonPos);
         ImGui::Begin("Dungeon", 0, windowSettings);
         m_dungeon.draw();
         ImGui::End();
 
-        ImGui::SetNextWindowPos({ 615.f, 15.f });
+        ImGui::SetNextWindowPos(layout.m_roomPropertiesPos);
         ImGui::Begin("Room properties", 0, windowSettings);
         m_dungeon.draw_selected_room_details();
         ImGui::End();
 
-        ImGui::SetNextWindowPos({ 693.f, 325.f });
+        ImGui::SetNextWindowPos(layout.m_actionsPos);
         ImGui::Begin("Actions", 0, windowSettings);
         actions_draw();
         ImGui::End();
