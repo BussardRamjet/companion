@@ -14,12 +14,14 @@
 // enums - PascalCase
 // enum values - enum_abbrv_PascalCase
 
+// Remove this: float aspectRatio = ImGui::GetIO().DisplaySize.x / ImGui::GetIO().DisplaySize.y;
 
 //////////////////////////////
 // POD Types
 //////////////////////////////
 
 using int32 = int32_t;
+using uint32 = uint32_t;
 
 struct ivec2
 {
@@ -635,27 +637,39 @@ private:
 // Companion
 //////////////////////////////
 
+constexpr uint32 windowSettings =
+    ImGuiWindowFlags_NoResize |
+    ImGuiWindowFlags_NoMove |
+    ImGuiWindowFlags_NoScrollbar |
+    ImGuiWindowFlags_NoScrollWithMouse |
+    ImGuiWindowFlags_NoCollapse |
+    ImGuiWindowFlags_AlwaysAutoResize |
+    ImGuiWindowFlags_NoSavedSettings;
+
 class Companion
 {
 public:
 
     void draw()
     {
-
-        ImGui::Begin("Companion", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SetNextWindowPos({ 612.f, 579.f });
+        ImGui::Begin("Companion", 0, windowSettings);
         ImGui::Text("Welcome to Mattel DnD Portable Companion!");
         ImGui::Text("(c) 2019 Norbert Szabo");
         ImGui::End();
 
-        ImGui::Begin("Dungeon", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SetNextWindowPos({ 17.f, 14.f });
+        ImGui::Begin("Dungeon", 0, windowSettings);
         m_dungeon.draw();
         ImGui::End();
 
-        ImGui::Begin("Room properties", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SetNextWindowPos({ 615.f, 15.f });
+        ImGui::Begin("Room properties", 0, windowSettings);
         m_dungeon.draw_selected_room_details();
         ImGui::End();
 
-        ImGui::Begin("Actions", 0, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SetNextWindowPos({ 693.f, 325.f });
+        ImGui::Begin("Actions", 0, windowSettings);
         actions_draw();
         ImGui::End();
     }
