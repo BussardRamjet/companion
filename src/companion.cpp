@@ -29,14 +29,26 @@ struct ivec2
     int32 y;
 };
 
+//////////////////////////////
+// Utility functions
+//////////////////////////////
+
+ImVec2 operator* (
+    const ImVec2 v, 
+    const float f)
+{
+    return { v.x * f, v.y * f };
+}
 
 //////////////////////////////
 // Constants
 //////////////////////////////
 
+constexpr float window_scale = 1.0f;
+
 constexpr int dungeon_size = 10;
-constexpr float room_screen_size = 52.f;
-constexpr float room_font_size_mult = 0.28f;
+constexpr float room_screen_size = 52.f * window_scale;
+constexpr float room_font_size_mult = 0.28f * window_scale;
 
 //////////////////////////////
 // NeighborState
@@ -640,6 +652,8 @@ private:
 class Layout
 {
 public:
+    const ImVec2 m_nativeSize;
+
     const ImVec2 m_companionPos;
     const ImVec2 m_dungeonPos;
     const ImVec2 m_roomPropertiesPos;
@@ -647,10 +661,12 @@ public:
 };
 
 static const Layout layout{ // Cannot do constexrp :(
-    { 612.f, 579.f },
-    { 17.f, 14.f },
-    { 615.f, 15.f },
-    { 693.f, 325.f }
+
+    .m_nativeSize { 700.f, 600.f},
+    .m_companionPos { 612.f, 579.f },
+    .m_dungeonPos { 17.f, 14.f },
+    .m_roomPropertiesPos { 615.f, 15.f },
+    .m_actionsPos { 693.f, 325.f }
 };
 
 //////////////////////////////
@@ -671,23 +687,29 @@ class Companion
 public:
     void draw()
     {
-        ImGui::SetNextWindowPos(layout.m_companionPos);
+
+        static ImGuiStyle originalStyle = ImGui::GetStyle();
+        ImGui::GetStyle() = originalStyle;
+        ImGui::GetStyle().ScaleAllSizes(window_scale);
+        ImGui::GetIO().FontGlobalScale = window_scale;
+
+        ImGui::SetNextWindowPos(layout.m_companionPos * window_scale);
         ImGui::Begin("Companion", 0, windowSettings);
         ImGui::Text("Welcome to Mattel DnD Portable Companion!");
         ImGui::Text("(c) 2019 Norbert Szabo");
         ImGui::End();
 
-        ImGui::SetNextWindowPos(layout.m_dungeonPos);
+        ImGui::SetNextWindowPos(layout.m_dungeonPos * window_scale);
         ImGui::Begin("Dungeon", 0, windowSettings);
         m_dungeon.draw();
         ImGui::End();
 
-        ImGui::SetNextWindowPos(layout.m_roomPropertiesPos);
+        ImGui::SetNextWindowPos(layout.m_roomPropertiesPos * window_scale);
         ImGui::Begin("Room properties", 0, windowSettings);
         m_dungeon.draw_selected_room_details();
         ImGui::End();
 
-        ImGui::SetNextWindowPos(layout.m_actionsPos);
+        ImGui::SetNextWindowPos(layout.m_actionsPos * window_scale);
         ImGui::Begin("Actions", 0, windowSettings);
         actions_draw();
         ImGui::End();
