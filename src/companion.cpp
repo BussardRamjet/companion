@@ -44,11 +44,14 @@ ImVec2 operator* (
 // Constants
 //////////////////////////////
 
-constexpr float window_scale = 1.0f;
-
 constexpr int dungeon_size = 10;
-constexpr float room_screen_size = 52.f * window_scale;
-constexpr float room_font_size_mult = 0.28f * window_scale;
+constexpr float room_screen_size_base = 52.f;
+constexpr float room_font_size_mult_base = 0.28f;
+
+static float window_scale = 1.0f;
+
+float room_screen_size;
+float room_font_size_mult;
 
 //////////////////////////////
 // NeighborState
@@ -662,7 +665,7 @@ public:
 
 static const Layout layout{ // Cannot do constexrp :(
 
-    .m_nativeSize { 700.f, 600.f},
+    .m_nativeSize { 933.f, 656.f},
     .m_companionPos { 612.f, 579.f },
     .m_dungeonPos { 17.f, 14.f },
     .m_roomPropertiesPos { 615.f, 15.f },
@@ -687,6 +690,15 @@ class Companion
 public:
     void draw()
     {
+        ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+
+        float xmult = displaySize.x / layout.m_nativeSize.x;
+        float ymult = displaySize.y / layout.m_nativeSize.y;
+
+        window_scale = std::min(xmult, ymult);
+
+        room_screen_size = room_screen_size_base * window_scale;
+        room_font_size_mult = room_font_size_mult_base * window_scale;
 
         static ImGuiStyle originalStyle = ImGui::GetStyle();
         ImGui::GetStyle() = originalStyle;
