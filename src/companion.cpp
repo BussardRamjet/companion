@@ -14,8 +14,6 @@
 // enums - PascalCase
 // enum values - enum_abbrv_PascalCase
 
-// Remove this: float aspectRatio = ImGui::GetIO().DisplaySize.x / ImGui::GetIO().DisplaySize.y;
-
 //////////////////////////////
 // POD Types
 //////////////////////////////
@@ -661,15 +659,37 @@ public:
     const ImVec2 m_dungeonPos;
     const ImVec2 m_roomPropertiesPos;
     const ImVec2 m_actionsPos;
+
+    float get_window_scale() const
+    {
+        ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+
+        float xMult = displaySize.x / m_nativeSize.x;
+        float yMult = displaySize.y / m_nativeSize.y;
+
+        return std::min(xMult, yMult);
+    }
 };
 
-static const Layout layout{ // Cannot do constexrp :(
+static const std::array<Layout, 2> layouts
+{ // Cannot do constexrp :(
+    {
+        { // Regular
+            .m_nativeSize { 933.f, 656.f},
+            .m_companionPos { 612.f, 579.f },
+            .m_dungeonPos { 17.f, 14.f },
+            .m_roomPropertiesPos { 615.f, 15.f },
+            .m_actionsPos { 693.f, 325.f }
+        },
 
-    .m_nativeSize { 933.f, 656.f},
-    .m_companionPos { 612.f, 579.f },
-    .m_dungeonPos { 17.f, 14.f },
-    .m_roomPropertiesPos { 615.f, 15.f },
-    .m_actionsPos { 693.f, 325.f }
+        { // Vertical
+            .m_nativeSize { 618.f, 950.f},
+            .m_companionPos { 24.f, 874.f },
+            .m_dungeonPos { 17.f, 14.f },
+            .m_roomPropertiesPos { 331.f, 650.f },
+            .m_actionsPos { 118.f, 648.f }
+        }
+    }
 };
 
 //////////////////////////////
@@ -690,12 +710,8 @@ class Companion
 public:
     void draw()
     {
-        ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-
-        float xmult = displaySize.x / layout.m_nativeSize.x;
-        float ymult = displaySize.y / layout.m_nativeSize.y;
-
-        window_scale = std::min(xmult, ymult);
+        const Layout& layout = find_best_layout();
+        window_scale = layout.get_window_scale();
 
         room_screen_size = room_screen_size_base * window_scale;
         room_font_size_mult = room_font_size_mult_base * window_scale;
@@ -808,6 +824,23 @@ private:
         {
             m_dungeon.found_a_pit();
         }
+    }
+
+    const Layout& find_best_layout() const
+    {
+        uint32 bestLayout = 0;
+        float scale = layouts[bestLayout].get_window_scale();
+
+        for (uint32 i = 1; i < layouts.size(); i++)
+        {
+            float current_scale = layouts[i].get_window_scale();
+            if (current_scale > scale)
+            {
+                scale = current_scale;
+                bestLayout = i;
+            }
+        }
+        return layouts[bestLayout];
     }
 };
 
