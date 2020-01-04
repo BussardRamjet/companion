@@ -33,6 +33,9 @@
     <ClInclude Include="..\src\companion.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="dungeon.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\contrib\imgui\imgui.cpp">
@@ -55,6 +58,9 @@
       <Filter>imgui_integration</Filter>
     </ClCompile>
     <ClCompile Include="..\src\companion.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="dungeon.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

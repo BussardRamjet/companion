@@ -94,6 +94,7 @@
     <ClInclude Include="..\..\contrib\imgui\imgui.h" />
     <ClInclude Include="..\..\contrib\imgui\imgui_internal.h" />
     <ClInclude Include="..\src\companion.h" />
+    <ClInclude Include="dungeon.h" />
     <ClInclude Include="imgui_integration\imgui_impl_dx12.h" />
     <ClInclude Include="imgui_integration\imgui_impl_win32.h" />
   </ItemGroup>
@@ -103,6 +104,7 @@
     <ClCompile Include="..\..\contrib\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\..\contrib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\src\companion.cpp" />
+    <ClCompile Include="dungeon.cpp" />
     <ClCompile Include="imgui_integration\imgui_impl_dx12.cpp" />
     <ClCompile Include="imgui_integration\imgui_impl_win32.cpp" />
     <ClCompile Include="main.cpp" />
