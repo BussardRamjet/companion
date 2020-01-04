@@ -1,9 +1,6 @@
 #include "companion.h"
 #include "dungeon.h"
 #include "imgui.h"
-#include <vector>
-#include <array>
-#include <string>
 
 // Naming conventions:
 // pod types - lowercase
