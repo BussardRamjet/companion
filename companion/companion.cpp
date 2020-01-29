@@ -113,7 +113,7 @@ public:
         ImGui::SetNextWindowPos(layout.m_companionPos * window_scale);
         ImGui::Begin("Companion", 0, windowSettings);
         ImGui::Text("Welcome to Mattel DnD Portable Companion!");
-        ImGui::Text("(c) 2019 Norbert Szabo");
+        ImGui::Text("v0.5.0             (c) 2020 Norbert Szabo");
         ImGui::End();
 
         ImGui::SetNextWindowPos(layout.m_dungeonPos * window_scale);
