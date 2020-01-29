@@ -8,7 +8,7 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <tchar.h>
-#include "..\src\companion.h"
+#include "companion\companion.h"
 
 #define DX12_ENABLE_DEBUG_LAYER     0
 
