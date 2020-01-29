@@ -10,18 +10,18 @@
     <Filter Include="imgui_integration">
       <UniqueIdentifier>{40573709-e17b-468b-9779-65dffa227559}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src">
+    <Filter Include="companion">
       <UniqueIdentifier>{b7642e72-9abe-42f3-946e-1f08c2918952}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\contrib\imgui\imconfig.h">
+    <ClInclude Include="contrib\imgui\imconfig.h">
       <Filter>contrib\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\contrib\imgui\imgui.h">
+    <ClInclude Include="contrib\imgui\imgui.h">
       <Filter>contrib\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\contrib\imgui\imgui_internal.h">
+    <ClInclude Include="contrib\imgui\imgui_internal.h">
       <Filter>contrib\imgui</Filter>
     </ClInclude>
     <ClInclude Include="imgui_integration\imgui_impl_dx12.h">
@@ -30,24 +30,24 @@
     <ClInclude Include="imgui_integration\imgui_impl_win32.h">
       <Filter>imgui_integration</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\companion.h">
-      <Filter>src</Filter>
+    <ClInclude Include="companion\companion.h">
+      <Filter>companion</Filter>
     </ClInclude>
-    <ClInclude Include="dungeon.h">
-      <Filter>src</Filter>
+    <ClInclude Include="companion\dungeon.h">
+      <Filter>companion</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\contrib\imgui\imgui.cpp">
+    <ClCompile Include="contrib\imgui\imgui.cpp">
       <Filter>contrib\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\contrib\imgui\imgui_demo.cpp">
+    <ClCompile Include="contrib\imgui\imgui_demo.cpp">
       <Filter>contrib\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\contrib\imgui\imgui_draw.cpp">
+    <ClCompile Include="contrib\imgui\imgui_draw.cpp">
       <Filter>contrib\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\contrib\imgui\imgui_widgets.cpp">
+    <ClCompile Include="contrib\imgui\imgui_widgets.cpp">
       <Filter>contrib\imgui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
@@ -57,11 +57,11 @@
     <ClCompile Include="imgui_integration\imgui_impl_win32.cpp">
       <Filter>imgui_integration</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\companion.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="companion\companion.cpp">
+      <Filter>companion</Filter>
     </ClCompile>
-    <ClCompile Include="dungeon.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="companion\dungeon.cpp">
+      <Filter>companion</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

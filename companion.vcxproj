@@ -56,7 +56,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.;..\..\contrib\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;contrib\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/wd5054 %(AdditionalOptions)</AdditionalOptions>
@@ -76,7 +76,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.;..\..\contrib\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;contrib\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/wd5054 %(AdditionalOptions)</AdditionalOptions>
@@ -90,21 +90,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\contrib\imgui\imconfig.h" />
-    <ClInclude Include="..\..\contrib\imgui\imgui.h" />
-    <ClInclude Include="..\..\contrib\imgui\imgui_internal.h" />
-    <ClInclude Include="..\src\companion.h" />
-    <ClInclude Include="dungeon.h" />
+    <ClInclude Include="contrib\imgui\imconfig.h" />
+    <ClInclude Include="contrib\imgui\imgui.h" />
+    <ClInclude Include="contrib\imgui\imgui_internal.h" />
+    <ClInclude Include="companion\companion.h" />
+    <ClInclude Include="companion\dungeon.h" />
     <ClInclude Include="imgui_integration\imgui_impl_dx12.h" />
     <ClInclude Include="imgui_integration\imgui_impl_win32.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\contrib\imgui\imgui.cpp" />
-    <ClCompile Include="..\..\contrib\imgui\imgui_demo.cpp" />
-    <ClCompile Include="..\..\contrib\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\..\contrib\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="..\src\companion.cpp" />
-    <ClCompile Include="dungeon.cpp" />
+    <ClCompile Include="contrib\imgui\imgui.cpp" />
+    <ClCompile Include="contrib\imgui\imgui_demo.cpp" />
+    <ClCompile Include="contrib\imgui\imgui_draw.cpp" />
+    <ClCompile Include="contrib\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="companion\companion.cpp" />
+    <ClCompile Include="companion\dungeon.cpp" />
     <ClCompile Include="imgui_integration\imgui_impl_dx12.cpp" />
     <ClCompile Include="imgui_integration\imgui_impl_win32.cpp" />
     <ClCompile Include="main.cpp" />
