@@ -1,3 +1,4 @@
+Download a Windows exectutable here:
 https://github.com/BussardRamjet/companion/releases/tag/v0.5.1
 
 # companion
